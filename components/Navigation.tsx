@@ -15,7 +15,7 @@ export function Navigation() {
   ]
 
   const getActiveValue = () => {
-    if (pathname === '/') return 'setup'
+    if (pathname === '/' || pathname === '/setup') return 'setup'
     if (pathname === '/current') return 'current'
     if (pathname === '/history') return 'history'
     if (pathname === '/export') return 'export'
