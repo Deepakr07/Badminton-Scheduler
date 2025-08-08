@@ -462,7 +462,7 @@ export default function BadmintonPWA() {
                       disabled={players.length < 3}
                       className="flex-1 bg-black hover:bg-gray-800 text-white text-sm sm:text-base"
                     >
-                      Generate Next Round
+                      {rounds.length === 0 ? 'Generate First Round' : 'Generate Next Round'}
                     </Button>
                     <Button
                       variant="outline"
@@ -489,123 +489,80 @@ export default function BadmintonPWA() {
           {/* Current Round Tab */}
           <TabsContent value="current" className="mt-6 sm:mt-8">
             {getCurrentRoundData() ? (
-              <div className="space-y-8 max-w-7xl mx-auto">
-                {/* Round Header */}
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-4 bg-gradient-to-r from-gray-900 to-gray-700 text-white px-8 py-5 rounded-2xl shadow-xl">
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                      <Trophy className="w-6 h-6 text-white" />
+              <div className="space-y-6">
+                <Card className="border-gray-200">
+                  <CardHeader>
+                    <CardTitle className="text-center text-black">
+                      Round {getCurrentRoundData().round}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                      {getCurrentRoundData().matches.map((match) => (
+                        <Card key={match.court} className="bg-gray-50 border-gray-200">
+                          <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                            <CardTitle className="text-center text-base sm:text-lg text-black">
+                              Court {match.court}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
+                            <div className="text-center">
+                              <div className="font-semibold text-black mb-1 text-sm sm:text-base">Team A</div>
+                              <div className="flex flex-wrap justify-center gap-1">
+                                {match.teamA.map(player => (
+                                  <Badge
+                                    key={player}
+                                    variant="secondary"
+                                    className="bg-white text-black border border-gray-300 text-xs sm:text-sm px-3 py-1 font-medium min-h-[24px] flex items-center justify-center"
+                                  >
+                                    {player}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="text-center text-xs sm:text-sm font-medium text-gray-500 my-2">VS</div>
+                            <div className="text-center">
+                              <div className="font-semibold text-black mb-1 text-sm sm:text-base">Team B</div>
+                              <div className="flex flex-wrap justify-center gap-1">
+                                {match.teamB.map(player => (
+                                  <Badge
+                                    key={player}
+                                    variant="secondary"
+                                    className="bg-white text-black border border-gray-300 text-xs sm:text-sm px-3 py-1 font-medium min-h-[24px] flex items-center justify-center"
+                                  >
+                                    {player}
+                                  </Badge>
+                                ))}
+                              </div>
+                              {match.teamB.length === 1 && (
+                                <div className="text-xs text-gray-500 mt-1">(Single Player)</div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                    <div>
-                      <h2 className="text-3xl sm:text-4xl font-bold">Round {getCurrentRoundData().round}</h2>
-                      <p className="text-gray-200 text-sm mt-1">
-                        {getCurrentRoundData().matches.length} {getCurrentRoundData().matches.length === 1 ? 'Court' : 'Courts'} Active
-                        {getCurrentRoundData().resting.length > 0 && ` • ${getCurrentRoundData().resting.length} Resting`}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                      <Clock className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                </div>
 
-                {/* Courts Grid */}
-                <div className="flex flex-wrap justify-center gap-6 lg:gap-8">
-                  {getCurrentRoundData().matches.map((match, index) => (
-                    <Card key={match.court} className="w-full max-w-sm bg-gradient-to-br from-white to-blue-50 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                      <CardHeader className="pb-3 px-6 pt-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
-                        <div className="flex items-center justify-center gap-3">
-                          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">
-                            {match.court}
-                          </div>
-                          <CardTitle className="text-center text-xl font-bold">
-                            Court {match.court}
-                          </CardTitle>
-                        </div>
-                        <div className="text-center text-blue-100 text-sm">
-                          {match.teamA.length}v{match.teamB.length} Match
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4 px-6 pb-6 pt-6">
-                        <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                          <div className="flex items-center justify-center gap-2 mb-3">
-                            <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                            <div className="font-bold text-green-800 text-base">Team A</div>
-                          </div>
-                          <div className="flex flex-wrap justify-center gap-2">
-                            {match.teamA.map(player => (
-                              <Badge
-                                key={player}
-                                className="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1 font-medium min-h-[28px] flex items-center justify-center shadow-sm"
-                              >
-                                {player}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-center py-3">
-                          <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-md">
-                            VS
-                          </div>
-                        </div>
-
-                        <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                          <div className="flex items-center justify-center gap-2 mb-3">
-                            <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-                            <div className="font-bold text-blue-800 text-base">Team B</div>
-                          </div>
-                          <div className="flex flex-wrap justify-center gap-2">
-                            {match.teamB.map(player => (
-                              <Badge
-                                key={player}
-                                className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 font-medium min-h-[28px] flex items-center justify-center shadow-sm"
-                              >
-                                {player}
-                              </Badge>
-                            ))}
-                          </div>
-                          {match.teamB.length === 1 && (
-                            <div className="text-xs text-blue-600 mt-2 font-medium text-center">(Single Player)</div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                {/* Resting Players */}
-                {getCurrentRoundData().resting.length > 0 && (
-                  <div className="flex justify-center">
-                    <Card className="w-full max-w-2xl bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200 shadow-lg">
-                      <CardHeader className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-t-lg">
-                        <div className="flex items-center justify-center gap-3">
-                          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                            <Users className="w-4 h-4 text-white" />
-                          </div>
-                          <CardTitle className="text-center text-xl font-bold">
+                    {getCurrentRoundData().resting.length > 0 && (
+                      <Card className="mt-6 bg-gray-50 border-gray-200">
+                        <CardHeader>
+                          <CardTitle className="text-center text-black">
                             Resting Players
                           </CardTitle>
-                        </div>
-                        <p className="text-center text-yellow-100 text-sm mt-1">
-                          {getCurrentRoundData().resting.length} {getCurrentRoundData().resting.length === 1 ? 'player' : 'players'} taking a break
-                        </p>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        <div className="flex flex-wrap gap-3 justify-center">
-                          {getCurrentRoundData().resting.map(player => (
-                            <Badge
-                              key={player}
-                              className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 px-4 py-2 font-medium shadow-sm hover:shadow-md transition-shadow text-sm"
-                            >
-                              {player}
-                            </Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2 justify-center">
+                            {getCurrentRoundData().resting.map(player => (
+                              <Badge key={player} variant="outline" className="border-gray-400 text-gray-700">
+                                {player}
+                              </Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             ) : (
               <Card className="border-gray-200">
@@ -614,7 +571,7 @@ export default function BadmintonPWA() {
                   <h3 className="text-xl font-semibold text-gray-600 mb-2">No Active Round</h3>
                   <p className="text-gray-500 mb-4">Generate your first round to get started!</p>
                   <Button onClick={() => generateNextRound()} disabled={players.length < 3} className="bg-black hover:bg-gray-800 text-white">
-                    Generate First Round
+                    {rounds.length === 0 ? 'Generate First Round' : 'Generate Next Round'}
                   </Button>
                 </CardContent>
               </Card>
