@@ -445,40 +445,82 @@ export default function BadmintonPWA() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="rackets" className="text-black">Number of Rackets</Label>
-                    <Input
-                      id="rackets"
-                      type="number"
-                      min="2"
-                      value={numberOfRackets}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value)
-                        if (!isNaN(value) && value >= 2) {
-                          setNumberOfRackets(value)
-                        } else if (e.target.value === '') {
-                          setNumberOfRackets(2) // Allow clearing and set to minimum
-                        }
-                      }}
-                      className="border-gray-300 focus:border-black focus:ring-black"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setNumberOfRackets(Math.max(2, numberOfRackets - 1))}
+                        disabled={numberOfRackets <= 2}
+                        className="h-10 w-10 p-0 border-gray-300 hover:bg-gray-50"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <Input
+                        id="rackets"
+                        type="number"
+                        min="2"
+                        value={numberOfRackets}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value)
+                          if (!isNaN(value) && value >= 2) {
+                            setNumberOfRackets(value)
+                          } else if (e.target.value === '') {
+                            setNumberOfRackets(2)
+                          }
+                        }}
+                        className="border-gray-300 focus:border-black focus:ring-black text-center"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setNumberOfRackets(numberOfRackets + 1)}
+                        className="h-10 w-10 p-0 border-gray-300 hover:bg-gray-50"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="courts" className="text-black">Number of Courts</Label>
-                    <Input
-                      id="courts"
-                      type="number"
-                      min="1"
-                      value={numberOfCourts}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value)
-                        if (!isNaN(value) && value >= 1) {
-                          setNumberOfCourts(value)
-                        } else if (e.target.value === '') {
-                          setNumberOfCourts(1) // Allow clearing and set to minimum
-                        }
-                      }}
-                      className="border-gray-300 focus:border-black focus:ring-black"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setNumberOfCourts(Math.max(1, numberOfCourts - 1))}
+                        disabled={numberOfCourts <= 1}
+                        className="h-10 w-10 p-0 border-gray-300 hover:bg-gray-50"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <Input
+                        id="courts"
+                        type="number"
+                        min="1"
+                        value={numberOfCourts}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value)
+                          if (!isNaN(value) && value >= 1) {
+                            setNumberOfCourts(value)
+                          } else if (e.target.value === '') {
+                            setNumberOfCourts(1)
+                          }
+                        }}
+                        className="border-gray-300 focus:border-black focus:ring-black text-center"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setNumberOfCourts(numberOfCourts + 1)}
+                        className="h-10 w-10 p-0 border-gray-300 hover:bg-gray-50"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
                     <p className="text-sm text-gray-600">
                       Recommended: {recommendedCourts} courts
                     </p>
