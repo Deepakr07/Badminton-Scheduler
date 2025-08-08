@@ -229,36 +229,36 @@ export default function BadmintonPWA() {
   const recommendedCourts = getRecommendedCourts()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 p-4">
+    <div className="min-h-screen bg-white p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <Card className="bg-white/80 backdrop-blur-sm border-emerald-200">
+        <Card className="border-gray-200">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold text-emerald-800 flex items-center justify-center gap-2">
-              <Trophy className="w-8 h-8" />
+            <CardTitle className="text-3xl font-bold text-black flex items-center justify-center gap-2">
+              <Trophy className="w-8 h-8 text-black" />
               Badminton Rotation Manager
             </CardTitle>
-            <CardDescription className="text-emerald-600">
+            <CardDescription className="text-gray-600">
               Fair player rotation and game scheduling for your badminton group
             </CardDescription>
           </CardHeader>
         </Card>
 
         <Tabs defaultValue="setup" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm">
-            <TabsTrigger value="setup" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-100 border border-gray-200">
+            <TabsTrigger value="setup" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
               <Settings className="w-4 h-4" />
               Setup
             </TabsTrigger>
-            <TabsTrigger value="current" className="flex items-center gap-2">
+            <TabsTrigger value="current" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
               <Clock className="w-4 h-4" />
               Current Round
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
+            <TabsTrigger value="history" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
               <Trophy className="w-4 h-4" />
               History
             </TabsTrigger>
-            <TabsTrigger value="export" className="flex items-center gap-2">
+            <TabsTrigger value="export" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
               <Download className="w-4 h-4" />
               Export
             </TabsTrigger>
@@ -268,10 +268,10 @@ export default function BadmintonPWA() {
           <TabsContent value="setup" className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               {/* Players Management */}
-              <Card className="bg-white/80 backdrop-blur-sm">
+              <Card className="border-gray-200">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
+                  <CardTitle className="flex items-center gap-2 text-black">
+                    <Users className="w-5 h-5 text-black" />
                     Players ({players.length})
                   </CardTitle>
                 </CardHeader>
@@ -282,18 +282,19 @@ export default function BadmintonPWA() {
                       value={newPlayerName}
                       onChange={(e) => setNewPlayerName(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
+                      className="border-gray-300 focus:border-black focus:ring-black"
                     />
-                    <Button onClick={addPlayer} size="icon">
+                    <Button onClick={addPlayer} size="icon" className="bg-black hover:bg-gray-800 text-white">
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
                   
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {players.map((player) => (
-                      <div key={player.name} className="flex items-center justify-between p-2 bg-emerald-50 rounded-lg">
+                      <div key={player.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{player.name}</span>
-                          <Badge variant="secondary" className="text-xs">
+                          <span className="font-medium text-black">{player.name}</span>
+                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-800 border border-gray-300">
                             {player.gamesPlayed} games
                           </Badge>
                         </div>
@@ -301,7 +302,7 @@ export default function BadmintonPWA() {
                           variant="ghost"
                           size="icon"
                           onClick={() => removePlayer(player.name)}
-                          className="h-8 w-8 text-red-500 hover:text-red-700"
+                          className="h-8 w-8 text-gray-500 hover:text-black hover:bg-gray-100"
                         >
                           <Minus className="w-4 h-4" />
                         </Button>
@@ -312,24 +313,25 @@ export default function BadmintonPWA() {
               </Card>
 
               {/* Configuration */}
-              <Card className="bg-white/80 backdrop-blur-sm">
+              <Card className="border-gray-200">
                 <CardHeader>
-                  <CardTitle>Configuration</CardTitle>
+                  <CardTitle className="text-black">Configuration</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="rackets">Number of Rackets</Label>
+                    <Label htmlFor="rackets" className="text-black">Number of Rackets</Label>
                     <Input
                       id="rackets"
                       type="number"
                       min="4"
                       value={numberOfRackets}
                       onChange={(e) => setNumberOfRackets(parseInt(e.target.value) || 4)}
+                      className="border-gray-300 focus:border-black focus:ring-black"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="courts">Number of Courts</Label>
+                    <Label htmlFor="courts" className="text-black">Number of Courts</Label>
                     <Input
                       id="courts"
                       type="number"
@@ -337,26 +339,27 @@ export default function BadmintonPWA() {
                       max="3"
                       value={numberOfCourts}
                       onChange={(e) => setNumberOfCourts(parseInt(e.target.value) || 1)}
+                      className="border-gray-300 focus:border-black focus:ring-black"
                     />
-                    <p className="text-sm text-emerald-600">
+                    <p className="text-sm text-gray-600">
                       Recommended: {recommendedCourts} courts
                     </p>
                   </div>
 
-                  <Separator />
+                  <Separator className="bg-gray-200" />
 
                   <div className="flex gap-2">
                     <Button
                       onClick={generateNextRound}
                       disabled={players.length < 3}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                      className="flex-1 bg-black hover:bg-gray-800 text-white"
                     >
                       Generate Next Round
                     </Button>
                     <Button
                       variant="outline"
                       onClick={resetSession}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 border-gray-300 hover:bg-gray-50"
                     >
                       <RotateCcw className="w-4 h-4" />
                       Reset
@@ -364,8 +367,8 @@ export default function BadmintonPWA() {
                   </div>
 
                   {players.length < 3 && (
-                    <Alert>
-                      <AlertDescription>
+                    <Alert className="border-gray-300 bg-gray-50">
+                      <AlertDescription className="text-gray-700">
                         You need at least 3 players to generate a round.
                       </AlertDescription>
                     </Alert>
@@ -379,27 +382,27 @@ export default function BadmintonPWA() {
           <TabsContent value="current">
             {getCurrentRoundData() ? (
               <div className="space-y-6">
-                <Card className="bg-white/80 backdrop-blur-sm">
+                <Card className="border-gray-200">
                   <CardHeader>
-                    <CardTitle className="text-center">
+                    <CardTitle className="text-center text-black">
                       Round {getCurrentRoundData().round}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {getCurrentRoundData().matches.map((match) => (
-                        <Card key={match.court} className="bg-emerald-50 border-emerald-200">
+                        <Card key={match.court} className="bg-gray-50 border-gray-200">
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-center text-lg">
+                            <CardTitle className="text-center text-lg text-black">
                               Court {match.court}
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-3">
                             <div className="text-center">
-                              <div className="font-semibold text-blue-700 mb-1">Team A</div>
+                              <div className="font-semibold text-black mb-1">Team A</div>
                               <div className="space-y-1">
                                 {match.teamA.map(player => (
-                                  <Badge key={player} variant="secondary" className="mr-1">
+                                  <Badge key={player} variant="secondary" className="mr-1 bg-white text-black border border-gray-300">
                                     {player}
                                   </Badge>
                                 ))}
@@ -407,10 +410,10 @@ export default function BadmintonPWA() {
                             </div>
                             <div className="text-center text-sm font-medium text-gray-500">VS</div>
                             <div className="text-center">
-                              <div className="font-semibold text-red-700 mb-1">Team B</div>
+                              <div className="font-semibold text-black mb-1">Team B</div>
                               <div className="space-y-1">
                                 {match.teamB.map(player => (
-                                  <Badge key={player} variant="secondary" className="mr-1">
+                                  <Badge key={player} variant="secondary" className="mr-1 bg-white text-black border border-gray-300">
                                     {player}
                                   </Badge>
                                 ))}
@@ -425,16 +428,16 @@ export default function BadmintonPWA() {
                     </div>
 
                     {getCurrentRoundData().resting.length > 0 && (
-                      <Card className="mt-6 bg-yellow-50 border-yellow-200">
+                      <Card className="mt-6 bg-gray-50 border-gray-200">
                         <CardHeader>
-                          <CardTitle className="text-center text-yellow-800">
+                          <CardTitle className="text-center text-black">
                             Resting Players
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="flex flex-wrap gap-2 justify-center">
                             {getCurrentRoundData().resting.map(player => (
-                              <Badge key={player} variant="outline" className="border-yellow-400 text-yellow-800">
+                              <Badge key={player} variant="outline" className="border-gray-400 text-gray-700">
                                 {player}
                               </Badge>
                             ))}
@@ -446,12 +449,12 @@ export default function BadmintonPWA() {
                 </Card>
               </div>
             ) : (
-              <Card className="bg-white/80 backdrop-blur-sm">
+              <Card className="border-gray-200">
                 <CardContent className="text-center py-12">
                   <Trophy className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                   <h3 className="text-xl font-semibold text-gray-600 mb-2">No Active Round</h3>
                   <p className="text-gray-500 mb-4">Generate your first round to get started!</p>
-                  <Button onClick={() => generateNextRound()} disabled={players.length < 3}>
+                  <Button onClick={() => generateNextRound()} disabled={players.length < 3} className="bg-black hover:bg-gray-800 text-white">
                     Generate First Round
                   </Button>
                 </CardContent>
@@ -463,7 +466,7 @@ export default function BadmintonPWA() {
           <TabsContent value="history">
             <div className="space-y-4">
               {rounds.length === 0 ? (
-                <Card className="bg-white/80 backdrop-blur-sm">
+                <Card className="border-gray-200">
                   <CardContent className="text-center py-12">
                     <Clock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                     <h3 className="text-xl font-semibold text-gray-600 mb-2">No Game History</h3>
@@ -472,29 +475,29 @@ export default function BadmintonPWA() {
                 </Card>
               ) : (
                 rounds.map((round) => (
-                  <Card key={round.round} className="bg-white/80 backdrop-blur-sm">
+                  <Card key={round.round} className="border-gray-200">
                     <CardHeader>
-                      <CardTitle>Round {round.round}</CardTitle>
+                      <CardTitle className="text-black">Round {round.round}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {round.matches.map((match) => (
-                          <div key={match.court} className="p-3 bg-gray-50 rounded-lg">
-                            <div className="font-semibold text-center mb-2">Court {match.court}</div>
+                          <div key={match.court} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="font-semibold text-center mb-2 text-black">Court {match.court}</div>
                             <div className="text-sm space-y-1">
                               <div>
-                                <span className="font-medium text-blue-700">Team A:</span> {match.teamA.join(', ')}
+                                <span className="font-medium text-black">Team A:</span> <span className="text-gray-700">{match.teamA.join(', ')}</span>
                               </div>
                               <div>
-                                <span className="font-medium text-red-700">Team B:</span> {match.teamB.join(', ')}
+                                <span className="font-medium text-black">Team B:</span> <span className="text-gray-700">{match.teamB.join(', ')}</span>
                               </div>
                             </div>
                           </div>
                         ))}
                       </div>
                       {round.resting.length > 0 && (
-                        <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
-                          <span className="font-medium text-yellow-800">Resting:</span> {round.resting.join(', ')}
+                        <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <span className="font-medium text-black">Resting:</span> <span className="text-gray-700">{round.resting.join(', ')}</span>
                         </div>
                       )}
                     </CardContent>
@@ -506,49 +509,49 @@ export default function BadmintonPWA() {
 
           {/* Export Tab */}
           <TabsContent value="export">
-            <Card className="bg-white/80 backdrop-blur-sm">
+            <Card className="border-gray-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Download className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-black">
+                  <Download className="w-5 h-5 text-black" />
                   Export Game Sheet
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-gray-600">
                   Download your complete game history and player statistics
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <h3 className="font-semibold">Session Summary</h3>
+                    <h3 className="font-semibold text-black">Session Summary</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span>Total Players:</span>
-                        <span className="font-medium">{players.length}</span>
+                        <span className="text-gray-600">Total Players:</span>
+                        <span className="font-medium text-black">{players.length}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Rounds Played:</span>
-                        <span className="font-medium">{rounds.length}</span>
+                        <span className="text-gray-600">Rounds Played:</span>
+                        <span className="font-medium text-black">{rounds.length}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Courts Used:</span>
-                        <span className="font-medium">{numberOfCourts}</span>
+                        <span className="text-gray-600">Courts Used:</span>
+                        <span className="font-medium text-black">{numberOfCourts}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Total Matches:</span>
-                        <span className="font-medium">{rounds.reduce((acc, round) => acc + round.matches.length, 0)}</span>
+                        <span className="text-gray-600">Total Matches:</span>
+                        <span className="font-medium text-black">{rounds.reduce((acc, round) => acc + round.matches.length, 0)}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="font-semibold">Player Statistics</h3>
+                    <h3 className="font-semibold text-black">Player Statistics</h3>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
                       {players
                         .sort((a, b) => b.gamesPlayed - a.gamesPlayed)
                         .map((player) => (
                           <div key={player.name} className="flex justify-between text-sm">
-                            <span>{player.name}</span>
-                            <span className="font-medium">{player.gamesPlayed} games</span>
+                            <span className="text-gray-600">{player.name}</span>
+                            <span className="font-medium text-black">{player.gamesPlayed} games</span>
                           </div>
                         ))}
                     </div>
@@ -559,7 +562,7 @@ export default function BadmintonPWA() {
                   <Button
                     onClick={exportToCSV}
                     disabled={rounds.length === 0}
-                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700"
+                    className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white"
                   >
                     <Download className="w-4 h-4" />
                     Export as CSV
@@ -567,8 +570,8 @@ export default function BadmintonPWA() {
                 </div>
 
                 {rounds.length === 0 && (
-                  <Alert>
-                    <AlertDescription>
+                  <Alert className="border-gray-300 bg-gray-50">
+                    <AlertDescription className="text-gray-700">
                       No game data to export. Play some rounds first!
                     </AlertDescription>
                   </Alert>
