@@ -143,21 +143,19 @@ export default function BadmintonPWA() {
 
     // Determine how many players can play (limited by rackets)
     let playersToAssign = Math.min(players.length, totalRacketsAvailable)
-
-    // Calculate optimal courts to use
     let courtsToUse = numberOfCourts
 
-    // Special handling for 5 players
-    if (playersToAssign === 5) {
-      if (courtsToUse >= 2) {
-        // With 2+ courts: 3 players (2v1) + 2 players (1v1)
-        courtsToUse = 2
-        playersToAssign = 5 // All players play
-      } else {
-        // With 1 court: 4 players (2v2) + 1 resting
-        courtsToUse = 1
-        playersToAssign = 4
-      }
+    // Optimize player distribution based on available players and courts
+    if (playersToAssign >= courtsToUse * 4) {
+      // If we have enough players for 4 per court, use 4 per court
+      playersToAssign = courtsToUse * 4
+    } else if (playersToAssign === 5 && courtsToUse >= 2) {
+      // Special case: 5 players with 2+ courts: 3 players (2v1) + 2 players (1v1)
+      courtsToUse = 2
+      playersToAssign = 5
+    } else if (playersToAssign === 5 && courtsToUse === 1) {
+      // Special case: 5 players with 1 court: 4 players (2v2) + 1 resting
+      playersToAssign = 4
     } else {
       // Adjust courts based on minimum players per court
       if (playersToAssign < courtsToUse * minPlayersPerCourt) {
@@ -183,20 +181,19 @@ export default function BadmintonPWA() {
       // Determine how many players for this court
       let playersForThisCourt: number
 
-      // Special case for 5 players with 2 courts
+      // Determine optimal players per court
       if (playingPlayers.length === 5 && courtsToUse === 2) {
-        if (court === 0) {
-          playersForThisCourt = 3 // First court: 2v1
-        } else {
-          playersForThisCourt = 2 // Second court: 1v1
-        }
+        // Special case: 5 players with 2 courts
+        playersForThisCourt = court === 0 ? 3 : 2 // First court: 2v1, Second court: 1v1
+      } else if (remainingPlayers >= 4 && remainingCourts > 0) {
+        // Prefer 4 players per court when possible
+        playersForThisCourt = 4
       } else if (remainingCourts === 1) {
-        // Last court gets all remaining players (3 or 4)
+        // Last court gets all remaining players
         playersForThisCourt = remainingPlayers
       } else {
-        // Try to distribute evenly, preferring 4 players per court
-        const avgPlayersPerRemainingCourt = remainingPlayers / remainingCourts
-        playersForThisCourt = avgPlayersPerRemainingCourt >= 3.5 ? 4 : 3
+        // Distribute remaining players evenly
+        playersForThisCourt = Math.max(3, Math.floor(remainingPlayers / remainingCourts))
       }
 
       // Ensure we don't exceed available players
@@ -431,9 +428,16 @@ export default function BadmintonPWA() {
                     <Input
                       id="rackets"
                       type="number"
-                      min="4"
+                      min="2"
                       value={numberOfRackets}
-                      onChange={(e) => setNumberOfRackets(parseInt(e.target.value) || 4)}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value)
+                        if (!isNaN(value) && value >= 2) {
+                          setNumberOfRackets(value)
+                        } else if (e.target.value === '') {
+                          setNumberOfRackets(2) // Allow clearing and set to minimum
+                        }
+                      }}
                       className="border-gray-300 focus:border-black focus:ring-black"
                     />
                   </div>
@@ -444,9 +448,15 @@ export default function BadmintonPWA() {
                       id="courts"
                       type="number"
                       min="1"
-                      max="3"
                       value={numberOfCourts}
-                      onChange={(e) => setNumberOfCourts(parseInt(e.target.value) || 1)}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value)
+                        if (!isNaN(value) && value >= 1) {
+                          setNumberOfCourts(value)
+                        } else if (e.target.value === '') {
+                          setNumberOfCourts(1) // Allow clearing and set to minimum
+                        }
+                      }}
                       className="border-gray-300 focus:border-black focus:ring-black"
                     />
                     <p className="text-sm text-gray-600">
