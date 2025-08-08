@@ -124,6 +124,36 @@ export function useBadmintonData() {
       return a.lastPlayedRound - b.lastPlayedRound
     })
 
+    // Shuffle players within the same priority group to avoid repeated pairings
+    const shuffleWithinPriorityGroups = (players: Player[]) => {
+      const groups = new Map<string, Player[]>()
+      
+      // Group players by their priority (gamesPlayed + lastPlayedRound)
+      players.forEach(player => {
+        const key = `${player.gamesPlayed}-${player.lastPlayedRound}`
+        if (!groups.has(key)) {
+          groups.set(key, [])
+        }
+        groups.get(key)!.push(player)
+      })
+
+      // Shuffle each group and combine
+      const shuffledPlayers: Player[] = []
+      for (const [key, group] of Array.from(groups.entries()).sort()) {
+        // Fisher-Yates shuffle for each group
+        const shuffledGroup = [...group]
+        for (let i = shuffledGroup.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[shuffledGroup[i], shuffledGroup[j]] = [shuffledGroup[j], shuffledGroup[i]]
+        }
+        shuffledPlayers.push(...shuffledGroup)
+      }
+      
+      return shuffledPlayers
+    }
+
+    const shuffledSortedPlayers = shuffleWithinPriorityGroups(sortedPlayers)
+
     // Calculate how many players can actually play based on courts
     // Each court needs at least 2 players and at most 4 players
     const maxPlayersPerRound = numberOfCourts * 4
@@ -180,8 +210,8 @@ export function useBadmintonData() {
     console.log(`Court distribution: ${playerDistribution.join(', ')} players per court`)
 
     // Divide players into playing and resting groups based on actual distribution
-    const playingPlayers = sortedPlayers.slice(0, actualPlayingPlayers)
-    const restingPlayers = sortedPlayers.slice(actualPlayingPlayers)
+    const playingPlayers = shuffledSortedPlayers.slice(0, actualPlayingPlayers)
+    const restingPlayers = shuffledSortedPlayers.slice(actualPlayingPlayers)
 
     const matches: Match[] = []
     let playerIndex = 0
