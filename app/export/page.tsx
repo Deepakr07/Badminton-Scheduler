@@ -7,14 +7,19 @@ import { ExportContent } from "@/components/export"
 import { useBadmintonContext } from "@/contexts/BadmintonContext"
 
 export default function ExportPage() {
-  const { rounds, exportToCSV } = useBadmintonContext()
+  const { rounds, players, numberOfCourts, exportToCSV } = useBadmintonContext()
 
   return (
     <PageLayout>
       <PageHeader />
       <Navigation />
       <div className="mt-6 sm:mt-8">
-        <ExportContent rounds={rounds} onExportCSV={exportToCSV} />
+        <ExportContent 
+          rounds={rounds} 
+          players={players}
+          numberOfCourts={numberOfCourts}
+          onExportCSV={exportToCSV} 
+        />
       </div>
     </PageLayout>
   )
