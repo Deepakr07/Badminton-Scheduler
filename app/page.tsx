@@ -169,9 +169,15 @@ export default function BadmintonPWA() {
     const playingPlayers = sortedPlayers.slice(0, playersToAssign)
     const restingPlayers = sortedPlayers.slice(playersToAssign)
 
+    console.log('=== ROUND GENERATION DEBUG ===')
+    console.log('Total players:', players.length)
+    console.log('Available rackets:', totalRacketsAvailable)
+    console.log('Available courts:', numberOfCourts)
+    console.log('Optimal distribution result:', optimal)
     console.log('Courts to use:', courtsToUse)
     console.log('Players to assign:', playersToAssign)
-    console.log('Playing players:', playingPlayers)
+    console.log('Playing players:', playingPlayers.map(p => p.name))
+    console.log('Resting players:', restingPlayers.map(p => p.name))
 
     // Create optimal player distribution across courts
     const distributePlayersAcrossCourts = (totalPlayers, totalCourts) => {
