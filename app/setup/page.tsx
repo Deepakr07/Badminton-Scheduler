@@ -7,7 +7,7 @@ import { SetupContent } from "@/components/setup"
 import { useBadmintonContext } from "@/contexts/BadmintonContext"
 import { useRouter } from "next/navigation"
 
-export default function HomePage() {
+export default function SetupPage() {
   const {
     players,
     numberOfRackets,
