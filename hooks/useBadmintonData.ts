@@ -116,6 +116,7 @@ export function useBadmintonData() {
   const generateNextRound = () => {
     if (players.length < 3) return null
 
+    // Sort players by least games played, then least recently played
     const sortedPlayers = [...players].sort((a, b) => {
       if (a.gamesPlayed !== b.gamesPlayed) {
         return a.gamesPlayed - b.gamesPlayed
@@ -123,62 +124,94 @@ export function useBadmintonData() {
       return a.lastPlayedRound - b.lastPlayedRound
     })
 
-    // Calculate how many players can play based on courts and rackets
-    const maxPlayersByRackets = numberOfRackets
-    const maxPlayersByCourts = numberOfCourts * 4 // Maximum 4 players per court
+    // Shuffle players within the same priority group to avoid repeated pairings
+    const shuffleWithinPriorityGroups = (players: Player[]) => {
+      const groups = new Map<string, Player[]>()
+      
+      // Group players by their priority (gamesPlayed + lastPlayedRound)
+      players.forEach(player => {
+        const key = `${player.gamesPlayed}-${player.lastPlayedRound}`
+        if (!groups.has(key)) {
+          groups.set(key, [])
+        }
+        groups.get(key)!.push(player)
+      })
 
-    // Determine actual players to assign and courts to use
-    let playersToAssign = Math.min(players.length, maxPlayersByRackets, maxPlayersByCourts)
-    let courtsToUse = numberOfCourts
-
-    // Adjust for court limitations - each court can handle 2-4 players optimally
-    if (courtsToUse === 1) {
-      // Single court scenarios
-      if (playersToAssign > 4) {
-        playersToAssign = 4 // Maximum 4 players on 1 court (2v2)
+      // Shuffle each group and combine
+      const shuffledPlayers: Player[] = []
+      for (const [key, group] of Array.from(groups.entries()).sort()) {
+        // Fisher-Yates shuffle for each group
+        const shuffledGroup = [...group]
+        for (let i = shuffledGroup.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[shuffledGroup[i], shuffledGroup[j]] = [shuffledGroup[j], shuffledGroup[i]]
+        }
+        shuffledPlayers.push(...shuffledGroup)
       }
-    } else if (courtsToUse === 2) {
-      // Two court scenarios
-      if (playersToAssign === 5) {
-        // 5 players, 2 courts: use both courts (3 + 2)
-        courtsToUse = 2
-      } else if (playersToAssign > 8) {
-        playersToAssign = 8 // Maximum 8 players on 2 courts
-      }
+      
+      return shuffledPlayers
     }
 
-    console.log(`Round generation: ${players.length} total players, ${playersToAssign} playing, ${courtsToUse} courts, ${players.length - playersToAssign} resting`)
+    const shuffledSortedPlayers = shuffleWithinPriorityGroups(sortedPlayers)
 
-    const playingPlayers = sortedPlayers.slice(0, playersToAssign)
-    const restingPlayers = sortedPlayers.slice(playersToAssign)
+    // Calculate how many players can actually play based on courts
+    // Each court needs at least 2 players and at most 4 players
+    const maxPlayersPerRound = numberOfCourts * 4
+    const minPlayersPerRound = numberOfCourts * 2
 
-    // Improved court distribution logic - prioritize optimal court filling
+    // Calculate actual players to assign considering racket limitations
+    let playersToAssign = Math.min(players.length, numberOfRackets, maxPlayersPerRound)
+
+    // Ensure we don't assign fewer players than minimum required for courts
+    if (playersToAssign < minPlayersPerRound && players.length >= minPlayersPerRound) {
+      playersToAssign = minPlayersPerRound
+    }
+
+    // Calculate optimal distribution for courts
     const distributePlayersOptimally = (totalPlayers: number, totalCourts: number) => {
+      if (totalPlayers < 2) return []
+      
       const distribution: number[] = []
       let remainingPlayers = totalPlayers
+      let remainingCourts = totalCourts
 
-      // Priority 1: Fill courts with 4 players first (optimal 2v2)
-      for (let court = 0; court < totalCourts && remainingPlayers >= 4; court++) {
+      // First, try to fill courts with 4 players each (2v2 matches)
+      while (remainingCourts > 0 && remainingPlayers >= 4) {
         distribution.push(4)
         remainingPlayers -= 4
+        remainingCourts--
       }
 
-      // Priority 2: Handle remaining players
-      if (remainingPlayers > 0 && distribution.length < totalCourts) {
+      // Handle remaining players
+      if (remainingPlayers > 0 && remainingCourts > 0) {
         if (remainingPlayers >= 2) {
-          // If we have at least 2 players left and available courts, create singles match (1v1)
-          distribution.push(remainingPlayers)
-        } else if (remainingPlayers === 1 && distribution.length > 0) {
-          // If only 1 player left, add to the last court (making it 5 players - 3v2)
-          distribution[distribution.length - 1] += 1
+          // If we have 2 or 3 players left and a court available
+          if (remainingPlayers === 3) {
+            // 1v2 match (not ideal but acceptable)
+            distribution.push(3)
+            remainingPlayers -= 3
+          } else if (remainingPlayers === 2) {
+            // 1v1 match
+            distribution.push(2)
+            remainingPlayers -= 2
+          }
         }
       }
 
+      // If we still have remaining players, they need to be distributed or rest
+      // For now, any remaining players will rest
       return distribution
     }
 
-    const playerDistribution = distributePlayersOptimally(playingPlayers.length, courtsToUse)
+    const playerDistribution = distributePlayersOptimally(playersToAssign, numberOfCourts)
+    const actualPlayingPlayers = playerDistribution.reduce((sum, players) => sum + players, 0)
+    
+    console.log(`Round generation: ${players.length} total players, ${actualPlayingPlayers} playing, ${playerDistribution.length} courts used, ${players.length - actualPlayingPlayers} resting`)
     console.log(`Court distribution: ${playerDistribution.join(', ')} players per court`)
+
+    // Divide players into playing and resting groups based on actual distribution
+    const playingPlayers = shuffledSortedPlayers.slice(0, actualPlayingPlayers)
+    const restingPlayers = shuffledSortedPlayers.slice(actualPlayingPlayers)
 
     const matches: Match[] = []
     let playerIndex = 0
@@ -190,53 +223,51 @@ export function useBadmintonData() {
         const courtPlayers = playingPlayers.slice(playerIndex, playerIndex + playersForThisCourt)
         playerIndex += playersForThisCourt
 
-        // Shuffle for random team assignment
+        // Shuffle players for random team assignment (Fisher-Yates)
         const shuffled = [...courtPlayers]
         for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
         }
 
         if (playersForThisCourt === 4) {
-          // Optimal 2v2 match
           matches.push({
             court: court + 1,
             teamA: [shuffled[0].name, shuffled[1].name],
             teamB: [shuffled[2].name, shuffled[3].name]
           })
         } else if (playersForThisCourt === 3) {
-          // 2v1 match
           matches.push({
             court: court + 1,
             teamA: [shuffled[0].name, shuffled[1].name],
             teamB: [shuffled[2].name]
           })
         } else if (playersForThisCourt === 2) {
-          // 1v1 singles match
           matches.push({
             court: court + 1,
             teamA: [shuffled[0].name],
             teamB: [shuffled[1].name]
           })
-        } else if (playersForThisCourt === 5) {
-          // Special case: 5 players on one court (3v2)
-          matches.push({
-            court: court + 1,
-            teamA: [shuffled[0].name, shuffled[1].name, shuffled[2].name],
-            teamB: [shuffled[3].name, shuffled[4].name]
-          })
         }
       }
     }
 
+    // Create new round data with resting players
     const newRound: Round = {
       round: currentRound + 1,
       matches,
       resting: restingPlayers.map(p => p.name)
     }
 
+    // Update player stats ONLY for those who are actually playing (in matches)
+    const playersInMatches = new Set<string>()
+    matches.forEach(match => {
+      match.teamA.forEach(player => playersInMatches.add(player))
+      match.teamB.forEach(player => playersInMatches.add(player))
+    })
+
     const updatedPlayers = players.map(player => {
-      if (playingPlayers.find(p => p.name === player.name)) {
+      if (playersInMatches.has(player.name)) {
         return {
           ...player,
           gamesPlayed: player.gamesPlayed + 1,
@@ -273,7 +304,7 @@ export function useBadmintonData() {
     rounds.forEach(round => {
       round.matches.forEach((match, index) => {
         const restingList = index === 0 ? round.resting.join('; ') : ''
-        csv += `${round.round},${match.court},${match.teamA[0]},${match.teamA[1]},${match.teamB[0]},${match.teamB[1]},${restingList}\n`
+        csv += `${round.round},${match.court},${match.teamA[0]},${match.teamA[1] || ''},${match.teamB[0]},${match.teamB[1] || ''},${restingList}\n`
       })
     })
 
