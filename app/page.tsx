@@ -32,8 +32,8 @@ interface Round {
 export default function BadmintonPWA() {
   const [players, setPlayers] = useState<Player[]>([])
   const [newPlayerName, setNewPlayerName] = useState('')
-  const [numberOfRackets, setNumberOfRackets] = useState(8)
-  const [numberOfCourts, setNumberOfCourts] = useState(2)
+  const [numberOfRackets, setNumberOfRackets] = useState(4)
+  const [numberOfCourts, setNumberOfCourts] = useState(1)
   const [rounds, setRounds] = useState<Round[]>([])
   const [currentRound, setCurrentRound] = useState(0)
   const [activeTab, setActiveTab] = useState('setup')
@@ -57,8 +57,8 @@ export default function BadmintonPWA() {
         }
 
         setPlayers(data.players || [])
-        setNumberOfRackets(data.numberOfRackets || 8)
-        setNumberOfCourts(data.numberOfCourts || 2)
+        setNumberOfRackets(data.numberOfRackets || 4)
+        setNumberOfCourts(data.numberOfCourts || 1)
         setRounds(loadedRounds)
         setActiveTab(data.activeTab || 'setup')
       } catch (error) {
@@ -462,7 +462,7 @@ export default function BadmintonPWA() {
                       disabled={players.length < 3}
                       className="flex-1 bg-black hover:bg-gray-800 text-white text-sm sm:text-base"
                     >
-                      Generate Next Round
+                      {rounds.length === 0 ? 'Generate First Round' : 'Generate Next Round'}
                     </Button>
                     <Button
                       variant="outline"
@@ -571,7 +571,7 @@ export default function BadmintonPWA() {
                   <h3 className="text-xl font-semibold text-gray-600 mb-2">No Active Round</h3>
                   <p className="text-gray-500 mb-4">Generate your first round to get started!</p>
                   <Button onClick={() => generateNextRound()} disabled={players.length < 3} className="bg-black hover:bg-gray-800 text-white">
-                    Generate First Round
+                    {rounds.length === 0 ? 'Generate First Round' : 'Generate Next Round'}
                   </Button>
                 </CardContent>
               </Card>
