@@ -136,18 +136,33 @@ export default function BadmintonPWA() {
       return a.lastPlayedRound - b.lastPlayedRound
     })
 
-    // Calculate how many players we can accommodate
+    // Calculate optimal player and court distribution
     const totalRacketsAvailable = numberOfRackets
     const maxPlayersPerCourt = 4
     const minPlayersPerCourt = 3
 
-    // Distribute players across courts optimally
+    // Determine how many players can play (limited by rackets)
     let playersToAssign = Math.min(players.length, totalRacketsAvailable)
+
+    // Calculate optimal courts to use
     let courtsToUse = numberOfCourts
 
-    // Adjust courts if we don't have enough players
-    if (playersToAssign < courtsToUse * minPlayersPerCourt) {
-      courtsToUse = Math.floor(playersToAssign / minPlayersPerCourt)
+    // Special handling for 5 players
+    if (playersToAssign === 5) {
+      if (courtsToUse >= 2) {
+        // With 2+ courts: 3 players (2v1) + 2 players (1v1)
+        courtsToUse = 2
+        playersToAssign = 5 // All players play
+      } else {
+        // With 1 court: 4 players (2v2) + 1 resting
+        courtsToUse = 1
+        playersToAssign = 4
+      }
+    } else {
+      // Adjust courts based on minimum players per court
+      if (playersToAssign < courtsToUse * minPlayersPerCourt) {
+        courtsToUse = Math.floor(playersToAssign / minPlayersPerCourt)
+      }
     }
 
     const playingPlayers = sortedPlayers.slice(0, playersToAssign)
@@ -168,7 +183,14 @@ export default function BadmintonPWA() {
       // Determine how many players for this court
       let playersForThisCourt: number
 
-      if (remainingCourts === 1) {
+      // Special case for 5 players with 2 courts
+      if (playingPlayers.length === 5 && courtsToUse === 2) {
+        if (court === 0) {
+          playersForThisCourt = 3 // First court: 2v1
+        } else {
+          playersForThisCourt = 2 // Second court: 1v1
+        }
+      } else if (remainingCourts === 1) {
         // Last court gets all remaining players (3 or 4)
         playersForThisCourt = remainingPlayers
       } else {
@@ -180,9 +202,13 @@ export default function BadmintonPWA() {
       // Ensure we don't exceed available players
       playersForThisCourt = Math.min(playersForThisCourt, remainingPlayers)
 
-      if (playersForThisCourt >= 3) {
+      console.log(`Court ${court + 1}: assigning ${playersForThisCourt} players`)
+
+      if (playersForThisCourt >= 2) {
         const courtPlayers = playingPlayers.slice(playerIndex, playerIndex + playersForThisCourt)
         playerIndex += playersForThisCourt
+
+        console.log(`Court ${court + 1} players:`, courtPlayers.map(p => p.name))
 
         // Shuffle for random team assignment using Fisher-Yates algorithm
         const shuffled = [...courtPlayers]
@@ -204,6 +230,13 @@ export default function BadmintonPWA() {
             court: court + 1,
             teamA: [shuffled[0].name, shuffled[1].name],
             teamB: [shuffled[2].name] // Single player team
+          })
+        } else if (playersForThisCourt === 2) {
+          // 1v1 format
+          matches.push({
+            court: court + 1,
+            teamA: [shuffled[0].name],
+            teamB: [shuffled[1].name]
           })
         }
       }
