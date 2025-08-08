@@ -138,30 +138,33 @@ export default function BadmintonPWA() {
 
     // Calculate optimal player and court distribution
     const totalRacketsAvailable = numberOfRackets
-    const maxPlayersPerCourt = 4
-    const minPlayersPerCourt = 3
 
     // Determine how many players can play (limited by rackets)
     let playersToAssign = Math.min(players.length, totalRacketsAvailable)
     let courtsToUse = numberOfCourts
 
-    // Optimize player distribution based on available players and courts
-    if (playersToAssign >= courtsToUse * 4) {
-      // If we have enough players for 4 per court, use 4 per court
-      playersToAssign = courtsToUse * 4
-    } else if (playersToAssign === 5 && courtsToUse >= 2) {
-      // Special case: 5 players with 2+ courts: 3 players (2v1) + 2 players (1v1)
-      courtsToUse = 2
-      playersToAssign = 5
-    } else if (playersToAssign === 5 && courtsToUse === 1) {
-      // Special case: 5 players with 1 court: 4 players (2v2) + 1 resting
-      playersToAssign = 4
-    } else {
-      // Adjust courts based on minimum players per court
-      if (playersToAssign < courtsToUse * minPlayersPerCourt) {
-        courtsToUse = Math.floor(playersToAssign / minPlayersPerCourt)
+    // Optimize distribution to maximize playing players and minimize resting
+    const getOptimalDistribution = (totalPlayers, availableCourts) => {
+      // Try to use all players if possible
+      let players = totalPlayers
+      let courts = availableCourts
+
+      // Calculate how many courts we actually need
+      const maxCourtsNeeded = Math.ceil(players / 3) // Minimum 3 players per court
+      courts = Math.min(courts, maxCourtsNeeded)
+
+      // If we have more players than can fit optimally, some will rest
+      const maxPlayersForCourts = courts * 4 // Maximum 4 players per court
+      if (players > maxPlayersForCourts) {
+        players = maxPlayersForCourts
       }
+
+      return { players, courts }
     }
+
+    const optimal = getOptimalDistribution(playersToAssign, courtsToUse)
+    playersToAssign = optimal.players
+    courtsToUse = optimal.courts
 
     const playingPlayers = sortedPlayers.slice(0, playersToAssign)
     const restingPlayers = sortedPlayers.slice(playersToAssign)
@@ -170,42 +173,59 @@ export default function BadmintonPWA() {
     console.log('Players to assign:', playersToAssign)
     console.log('Playing players:', playingPlayers)
 
-    // Create matches with flexible player distribution
+    // Create optimal player distribution across courts
+    const distributePlayersAcrossCourts = (totalPlayers, totalCourts) => {
+      const distribution = []
+      let remainingPlayers = totalPlayers
+
+      for (let court = 0; court < totalCourts; court++) {
+        const remainingCourts = totalCourts - court
+
+        if (remainingCourts === 1) {
+          // Last court gets all remaining players
+          distribution.push(remainingPlayers)
+        } else {
+          // Calculate optimal players for this court
+          const avgPlayersPerRemainingCourt = remainingPlayers / remainingCourts
+
+          if (avgPlayersPerRemainingCourt >= 4) {
+            // Use 4 players if we have plenty
+            distribution.push(4)
+            remainingPlayers -= 4
+          } else if (avgPlayersPerRemainingCourt >= 3.5) {
+            // Use 4 players to avoid having too few for remaining courts
+            distribution.push(4)
+            remainingPlayers -= 4
+          } else if (remainingPlayers >= 3) {
+            // Use 3 players
+            distribution.push(3)
+            remainingPlayers -= 3
+          } else {
+            // Use remaining players (should be 2)
+            distribution.push(remainingPlayers)
+            remainingPlayers = 0
+          }
+        }
+      }
+
+      return distribution
+    }
+
+    const playerDistribution = distributePlayersAcrossCourts(playingPlayers.length, courtsToUse)
+    console.log('Player distribution across courts:', playerDistribution)
+
+    // Create matches based on the distribution
     const matches: Match[] = []
     let playerIndex = 0
 
-    for (let court = 0; court < courtsToUse && playerIndex < playingPlayers.length; court++) {
-      const remainingPlayers = playingPlayers.length - playerIndex
-      const remainingCourts = courtsToUse - court
-
-      // Determine how many players for this court
-      let playersForThisCourt: number
-
-      // Determine optimal players per court
-      if (playingPlayers.length === 5 && courtsToUse === 2) {
-        // Special case: 5 players with 2 courts
-        playersForThisCourt = court === 0 ? 3 : 2 // First court: 2v1, Second court: 1v1
-      } else if (remainingPlayers >= 4 && remainingCourts > 0) {
-        // Prefer 4 players per court when possible
-        playersForThisCourt = 4
-      } else if (remainingCourts === 1) {
-        // Last court gets all remaining players
-        playersForThisCourt = remainingPlayers
-      } else {
-        // Distribute remaining players evenly
-        playersForThisCourt = Math.max(3, Math.floor(remainingPlayers / remainingCourts))
-      }
-
-      // Ensure we don't exceed available players
-      playersForThisCourt = Math.min(playersForThisCourt, remainingPlayers)
-
-      console.log(`Court ${court + 1}: assigning ${playersForThisCourt} players`)
+    for (let court = 0; court < courtsToUse; court++) {
+      const playersForThisCourt = playerDistribution[court]
 
       if (playersForThisCourt >= 2) {
         const courtPlayers = playingPlayers.slice(playerIndex, playerIndex + playersForThisCourt)
         playerIndex += playersForThisCourt
 
-        console.log(`Court ${court + 1} players:`, courtPlayers.map(p => p.name))
+        console.log(`Court ${court + 1}: ${playersForThisCourt} players -`, courtPlayers.map(p => p.name))
 
         // Shuffle for random team assignment using Fisher-Yates algorithm
         const shuffled = [...courtPlayers]
