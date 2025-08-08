@@ -1,0 +1,20 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="192" height="192" rx="24" fill="#000000"/>
+<g transform="translate(48, 48)">
+  <!-- Badminton racket -->
+  <ellipse cx="48" cy="32" rx="20" ry="28" stroke="white" stroke-width="3" fill="none"/>
+  <line x1="48" y1="60" x2="48" y2="90" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Racket strings -->
+  <line x1="32" y1="32" x2="64" y2="32" stroke="white" stroke-width="1" opacity="0.7"/>
+  <line x1="32" y1="24" x2="64" y2="24" stroke="white" stroke-width="1" opacity="0.7"/>
+  <line x1="32" y1="40" x2="64" y2="40" stroke="white" stroke-width="1" opacity="0.7"/>
+  <line x1="48" y1="8" x2="48" y2="56" stroke="white" stroke-width="1" opacity="0.7"/>
+  <line x1="40" y1="12" x2="40" y2="52" stroke="white" stroke-width="1" opacity="0.7"/>
+  <line x1="56" y1="12" x2="56" y2="52" stroke="white" stroke-width="1" opacity="0.7"/>
+  
+  <!-- Shuttlecock -->
+  <circle cx="72" cy="16" r="3" fill="white"/>
+  <path d="M72 19 L69 28 L75 28 Z" fill="white" opacity="0.8"/>
+</g>
+</svg>
