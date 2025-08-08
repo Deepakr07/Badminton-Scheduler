@@ -229,43 +229,60 @@ export default function BadmintonPWA() {
   const recommendedCourts = getRecommendedCourts()
 
   return (
-    <div className="min-h-screen bg-white p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-white p-2 sm:p-4 pt-4 sm:pt-8">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <Card className="border-gray-200">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold text-black flex items-center justify-center gap-2">
-              <Trophy className="w-8 h-8 text-black" />
-              Badminton Rotation Manager
+            <CardTitle className="text-2xl sm:text-3xl font-bold text-black flex items-center justify-center gap-2">
+              <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-black" />
+              <span className="hidden sm:inline">Badminton Rotation Manager</span>
+              <span className="sm:hidden">Badminton Manager</span>
             </CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardDescription className="text-gray-600 text-sm sm:text-base">
               Fair player rotation and game scheduling for your badminton group
             </CardDescription>
           </CardHeader>
         </Card>
 
         <Tabs defaultValue="setup" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-100 border border-gray-200">
-            <TabsTrigger value="setup" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-gray-100 border border-gray-200 p-1">
+            <TabsTrigger 
+              value="setup" 
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+            >
               <Settings className="w-4 h-4" />
-              Setup
+              <span className="hidden xs:inline">Setup</span>
+              <span className="xs:hidden">Setup</span>
             </TabsTrigger>
-            <TabsTrigger value="current" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
+            <TabsTrigger 
+              value="current" 
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+            >
               <Clock className="w-4 h-4" />
-              Current Round
+              <span className="hidden xs:inline">Current Round</span>
+              <span className="xs:hidden">Current</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
+            <TabsTrigger 
+              value="history" 
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+            >
               <Trophy className="w-4 h-4" />
-              History
+              <span className="hidden xs:inline">History</span>
+              <span className="xs:hidden">History</span>
             </TabsTrigger>
-            <TabsTrigger value="export" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
+            <TabsTrigger 
+              value="export" 
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+            >
               <Download className="w-4 h-4" />
-              Export
+              <span className="hidden xs:inline">Export</span>
+              <span className="xs:hidden">Export</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Setup Tab */}
-          <TabsContent value="setup" className="space-y-6">
+          <TabsContent value="setup" className="space-y-6 mt-4 sm:mt-6">
             <div className="grid md:grid-cols-2 gap-6">
               {/* Players Management */}
               <Card className="border-gray-200">
@@ -291,10 +308,10 @@ export default function BadmintonPWA() {
                   
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {players.map((player) => (
-                      <div key={player.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-black">{player.name}</span>
-                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-800 border border-gray-300">
+                      <div key={player.name} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+                          <span className="font-medium text-black text-sm sm:text-base truncate">{player.name}</span>
+                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-800 border border-gray-300 shrink-0">
                             {player.gamesPlayed} games
                           </Badge>
                         </div>
@@ -302,7 +319,7 @@ export default function BadmintonPWA() {
                           variant="ghost"
                           size="icon"
                           onClick={() => removePlayer(player.name)}
-                          className="h-8 w-8 text-gray-500 hover:text-black hover:bg-gray-100"
+                          className="h-8 w-8 text-gray-500 hover:text-black hover:bg-gray-100 shrink-0 ml-2"
                         >
                           <Minus className="w-4 h-4" />
                         </Button>
@@ -348,18 +365,18 @@ export default function BadmintonPWA() {
 
                   <Separator className="bg-gray-200" />
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button
                       onClick={generateNextRound}
                       disabled={players.length < 3}
-                      className="flex-1 bg-black hover:bg-gray-800 text-white"
+                      className="flex-1 bg-black hover:bg-gray-800 text-white text-sm sm:text-base"
                     >
                       Generate Next Round
                     </Button>
                     <Button
                       variant="outline"
                       onClick={resetSession}
-                      className="flex items-center gap-2 border-gray-300 hover:bg-gray-50"
+                      className="flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50 text-sm sm:text-base"
                     >
                       <RotateCcw className="w-4 h-4" />
                       Reset
@@ -379,7 +396,7 @@ export default function BadmintonPWA() {
           </TabsContent>
 
           {/* Current Round Tab */}
-          <TabsContent value="current">
+          <TabsContent value="current" className="mt-4 sm:mt-6">
             {getCurrentRoundData() ? (
               <div className="space-y-6">
                 <Card className="border-gray-200">
@@ -389,38 +406,38 @@ export default function BadmintonPWA() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       {getCurrentRoundData().matches.map((match) => (
                         <Card key={match.court} className="bg-gray-50 border-gray-200">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-center text-lg text-black">
+                          <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                            <CardTitle className="text-center text-base sm:text-lg text-black">
                               Court {match.court}
                             </CardTitle>
                           </CardHeader>
-                          <CardContent className="space-y-3">
+                          <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
                             <div className="text-center">
-                              <div className="font-semibold text-black mb-1">Team A</div>
-                              <div className="space-y-1">
+                              <div className="font-semibold text-black mb-1 text-sm sm:text-base">Team A</div>
+                              <div className="space-y-1 flex flex-wrap justify-center gap-1">
                                 {match.teamA.map(player => (
-                                  <Badge key={player} variant="secondary" className="mr-1 bg-white text-black border border-gray-300">
+                                  <Badge key={player} variant="secondary" className="bg-white text-black border border-gray-300 text-xs sm:text-sm">
                                     {player}
                                   </Badge>
                                 ))}
                               </div>
                             </div>
-                            <div className="text-center text-sm font-medium text-gray-500">VS</div>
+                            <div className="text-center text-xs sm:text-sm font-medium text-gray-500">VS</div>
                             <div className="text-center">
-                              <div className="font-semibold text-black mb-1">Team B</div>
-                              <div className="space-y-1">
+                              <div className="font-semibold text-black mb-1 text-sm sm:text-base">Team B</div>
+                              <div className="space-y-1 flex flex-wrap justify-center gap-1">
                                 {match.teamB.map(player => (
-                                  <Badge key={player} variant="secondary" className="mr-1 bg-white text-black border border-gray-300">
+                                  <Badge key={player} variant="secondary" className="bg-white text-black border border-gray-300 text-xs sm:text-sm">
                                     {player}
                                   </Badge>
                                 ))}
-                                {match.teamB.length === 1 && (
-                                  <div className="text-xs text-gray-500 mt-1">(Single Player)</div>
-                                )}
                               </div>
+                              {match.teamB.length === 1 && (
+                                <div className="text-xs text-gray-500 mt-1">(Single Player)</div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -463,7 +480,7 @@ export default function BadmintonPWA() {
           </TabsContent>
 
           {/* History Tab */}
-          <TabsContent value="history">
+          <TabsContent value="history" className="mt-4 sm:mt-6">
             <div className="space-y-4">
               {rounds.length === 0 ? (
                 <Card className="border-gray-200">
@@ -508,7 +525,7 @@ export default function BadmintonPWA() {
           </TabsContent>
 
           {/* Export Tab */}
-          <TabsContent value="export">
+          <TabsContent value="export" className="mt-4 sm:mt-6">
             <Card className="border-gray-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-black">
@@ -562,7 +579,7 @@ export default function BadmintonPWA() {
                   <Button
                     onClick={exportToCSV}
                     disabled={rounds.length === 0}
-                    className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white"
+                    className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white text-sm sm:text-base w-full sm:w-auto"
                   >
                     <Download className="w-4 h-4" />
                     Export as CSV
