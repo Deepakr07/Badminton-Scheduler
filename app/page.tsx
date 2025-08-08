@@ -1,0 +1,583 @@
+"use client"
+
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
+import { Download, Users, Trophy, Clock, Settings, Plus, Minus, RotateCcw } from 'lucide-react'
+import { Alert, AlertDescription } from "@/components/ui/alert"
+
+interface Player {
+  name: string
+  gamesPlayed: number
+  lastPlayedRound: number
+}
+
+interface Match {
+  court: number
+  teamA: string[]
+  teamB: string[]
+}
+
+interface Round {
+  round: number
+  matches: Match[]
+  resting: string[]
+}
+
+export default function BadmintonPWA() {
+  const [players, setPlayers] = useState<Player[]>([])
+  const [newPlayerName, setNewPlayerName] = useState('')
+  const [numberOfRackets, setNumberOfRackets] = useState(8)
+  const [numberOfCourts, setNumberOfCourts] = useState(2)
+  const [rounds, setRounds] = useState<Round[]>([])
+  const [currentRound, setCurrentRound] = useState(0)
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('badminton-pwa-data')
+    if (savedData) {
+      const data = JSON.parse(savedData)
+      setPlayers(data.players || [])
+      setNumberOfRackets(data.numberOfRackets || 8)
+      setNumberOfCourts(data.numberOfCourts || 2)
+      setRounds(data.rounds || [])
+      setCurrentRound(data.currentRound || 0)
+    }
+  }, [])
+
+  // Save data to localStorage whenever state changes
+  useEffect(() => {
+    const data = {
+      players,
+      numberOfRackets,
+      numberOfCourts,
+      rounds,
+      currentRound
+    }
+    localStorage.setItem('badminton-pwa-data', JSON.stringify(data))
+  }, [players, numberOfRackets, numberOfCourts, rounds, currentRound])
+
+  const getRecommendedCourts = () => {
+    if (players.length < 3) return 0
+  
+    const maxByPlayers = Math.floor(players.length / 3) // Minimum 3 players per court (2v1)
+    const maxByRackets = Math.floor(numberOfRackets / 3) // Minimum 3 rackets per court
+    
+    // Calculate optimal courts considering we can have 2v1 games
+    let recommendedCourts = Math.min(3, maxByPlayers, maxByRackets)
+    
+    // Special cases for better utilization
+    if (players.length >= 7 && numberOfRackets >= 7) {
+      recommendedCourts = Math.max(2, recommendedCourts) // At least 2 courts for 7+ players
+    }
+    
+    if (players.length >= 11 && numberOfRackets >= 11) {
+      recommendedCourts = Math.max(3, recommendedCourts) // At least 3 courts for 11+ players
+    }
+    
+    return recommendedCourts
+  }
+
+  const addPlayer = () => {
+    if (newPlayerName.trim() && !players.find(p => p.name === newPlayerName.trim())) {
+      setPlayers([...players, {
+        name: newPlayerName.trim(),
+        gamesPlayed: 0,
+        lastPlayedRound: 0
+      }])
+      setNewPlayerName('')
+    }
+  }
+
+  const removePlayer = (playerName: string) => {
+    setPlayers(players.filter(p => p.name !== playerName))
+  }
+
+  const generateNextRound = () => {
+    if (players.length < 3) return
+
+    // Sort players by priority (games played, then last played round)
+    const sortedPlayers = [...players].sort((a, b) => {
+      if (a.gamesPlayed !== b.gamesPlayed) {
+        return a.gamesPlayed - b.gamesPlayed
+      }
+      return a.lastPlayedRound - b.lastPlayedRound
+    })
+
+    // Calculate how many players we can accommodate
+    const totalRacketsAvailable = numberOfRackets
+    const maxPlayersPerCourt = 4
+    const minPlayersPerCourt = 3
+    
+    // Distribute players across courts optimally
+    let playersToAssign = Math.min(players.length, totalRacketsAvailable)
+    let courtsToUse = numberOfCourts
+    
+    // Adjust courts if we don't have enough players
+    if (playersToAssign < courtsToUse * minPlayersPerCourt) {
+      courtsToUse = Math.floor(playersToAssign / minPlayersPerCourt)
+    }
+    
+    const playingPlayers = sortedPlayers.slice(0, playersToAssign)
+    const restingPlayers = sortedPlayers.slice(playersToAssign)
+
+    // Create matches with flexible player distribution
+    const matches: Match[] = []
+    let playerIndex = 0
+    
+    for (let court = 0; court < courtsToUse && playerIndex < playingPlayers.length; court++) {
+      const remainingPlayers = playingPlayers.length - playerIndex
+      const remainingCourts = courtsToUse - court
+      
+      // Determine how many players for this court
+      let playersForThisCourt: number
+      
+      if (remainingCourts === 1) {
+        // Last court gets all remaining players (3 or 4)
+        playersForThisCourt = remainingPlayers
+      } else {
+        // Try to distribute evenly, preferring 4 players per court
+        const avgPlayersPerRemainingCourt = remainingPlayers / remainingCourts
+        playersForThisCourt = avgPlayersPerRemainingCourt >= 3.5 ? 4 : 3
+      }
+      
+      // Ensure we don't exceed available players
+      playersForThisCourt = Math.min(playersForThisCourt, remainingPlayers)
+      
+      if (playersForThisCourt >= 3) {
+        const courtPlayers = playingPlayers.slice(playerIndex, playerIndex + playersForThisCourt)
+        playerIndex += playersForThisCourt
+        
+        // Shuffle for random team assignment
+        const shuffled = [...courtPlayers].sort(() => Math.random() - 0.5)
+        
+        if (playersForThisCourt === 4) {
+          // Standard 2v2
+          matches.push({
+            court: court + 1,
+            teamA: [shuffled[0].name, shuffled[1].name],
+            teamB: [shuffled[2].name, shuffled[3].name]
+          })
+        } else if (playersForThisCourt === 3) {
+          // 2v1 format
+          matches.push({
+            court: court + 1,
+            teamA: [shuffled[0].name, shuffled[1].name],
+            teamB: [shuffled[2].name] // Single player team
+          })
+        }
+      }
+    }
+
+    const newRound: Round = {
+      round: currentRound + 1,
+      matches,
+      resting: restingPlayers.map(p => p.name)
+    }
+
+    // Update player stats
+    const updatedPlayers = players.map(player => {
+      if (playingPlayers.find(p => p.name === player.name)) {
+        return {
+          ...player,
+          gamesPlayed: player.gamesPlayed + 1,
+          lastPlayedRound: currentRound + 1
+        }
+      }
+      return player
+    })
+
+    setPlayers(updatedPlayers)
+    setRounds([...rounds, newRound])
+    setCurrentRound(currentRound + 1)
+  }
+
+  const resetSession = () => {
+    setPlayers(players.map(p => ({ ...p, gamesPlayed: 0, lastPlayedRound: 0 })))
+    setRounds([])
+    setCurrentRound(0)
+  }
+
+  const exportToCSV = () => {
+    let csv = 'Round,Court,Team A Player 1,Team A Player 2,Team B Player 1,Team B Player 2,Resting Players\n'
+    
+    rounds.forEach(round => {
+      round.matches.forEach((match, index) => {
+        const restingList = index === 0 ? round.resting.join('; ') : ''
+        csv += `${round.round},${match.court},${match.teamA[0]},${match.teamA[1]},${match.teamB[0]},${match.teamB[1]},${restingList}\n`
+      })
+    })
+
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `badminton-games-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const getCurrentRoundData = () => {
+    return rounds[currentRound - 1]
+  }
+
+  const recommendedCourts = getRecommendedCourts()
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 p-4">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <Card className="bg-white/80 backdrop-blur-sm border-emerald-200">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl font-bold text-emerald-800 flex items-center justify-center gap-2">
+              <Trophy className="w-8 h-8" />
+              Badminton Rotation Manager
+            </CardTitle>
+            <CardDescription className="text-emerald-600">
+              Fair player rotation and game scheduling for your badminton group
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        <Tabs defaultValue="setup" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm">
+            <TabsTrigger value="setup" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Setup
+            </TabsTrigger>
+            <TabsTrigger value="current" className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Current Round
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              History
+            </TabsTrigger>
+            <TabsTrigger value="export" className="flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Export
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Setup Tab */}
+          <TabsContent value="setup" className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Players Management */}
+              <Card className="bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Players ({players.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter player name"
+                      value={newPlayerName}
+                      onChange={(e) => setNewPlayerName(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
+                    />
+                    <Button onClick={addPlayer} size="icon">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {players.map((player) => (
+                      <div key={player.name} className="flex items-center justify-between p-2 bg-emerald-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{player.name}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {player.gamesPlayed} games
+                          </Badge>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePlayer(player.name)}
+                          className="h-8 w-8 text-red-500 hover:text-red-700"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Configuration */}
+              <Card className="bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>Configuration</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="rackets">Number of Rackets</Label>
+                    <Input
+                      id="rackets"
+                      type="number"
+                      min="4"
+                      value={numberOfRackets}
+                      onChange={(e) => setNumberOfRackets(parseInt(e.target.value) || 4)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="courts">Number of Courts</Label>
+                    <Input
+                      id="courts"
+                      type="number"
+                      min="1"
+                      max="3"
+                      value={numberOfCourts}
+                      onChange={(e) => setNumberOfCourts(parseInt(e.target.value) || 1)}
+                    />
+                    <p className="text-sm text-emerald-600">
+                      Recommended: {recommendedCourts} courts
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={generateNextRound}
+                      disabled={players.length < 3}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      Generate Next Round
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={resetSession}
+                      className="flex items-center gap-2"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Reset
+                    </Button>
+                  </div>
+
+                  {players.length < 3 && (
+                    <Alert>
+                      <AlertDescription>
+                        You need at least 3 players to generate a round.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Current Round Tab */}
+          <TabsContent value="current">
+            {getCurrentRoundData() ? (
+              <div className="space-y-6">
+                <Card className="bg-white/80 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="text-center">
+                      Round {getCurrentRoundData().round}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {getCurrentRoundData().matches.map((match) => (
+                        <Card key={match.court} className="bg-emerald-50 border-emerald-200">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-center text-lg">
+                              Court {match.court}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <div className="text-center">
+                              <div className="font-semibold text-blue-700 mb-1">Team A</div>
+                              <div className="space-y-1">
+                                {match.teamA.map(player => (
+                                  <Badge key={player} variant="secondary" className="mr-1">
+                                    {player}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="text-center text-sm font-medium text-gray-500">VS</div>
+                            <div className="text-center">
+                              <div className="font-semibold text-red-700 mb-1">Team B</div>
+                              <div className="space-y-1">
+                                {match.teamB.map(player => (
+                                  <Badge key={player} variant="secondary" className="mr-1">
+                                    {player}
+                                  </Badge>
+                                ))}
+                                {match.teamB.length === 1 && (
+                                  <div className="text-xs text-gray-500 mt-1">(Single Player)</div>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {getCurrentRoundData().resting.length > 0 && (
+                      <Card className="mt-6 bg-yellow-50 border-yellow-200">
+                        <CardHeader>
+                          <CardTitle className="text-center text-yellow-800">
+                            Resting Players
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2 justify-center">
+                            {getCurrentRoundData().resting.map(player => (
+                              <Badge key={player} variant="outline" className="border-yellow-400 text-yellow-800">
+                                {player}
+                              </Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <Card className="bg-white/80 backdrop-blur-sm">
+                <CardContent className="text-center py-12">
+                  <Trophy className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-600 mb-2">No Active Round</h3>
+                  <p className="text-gray-500 mb-4">Generate your first round to get started!</p>
+                  <Button onClick={() => generateNextRound()} disabled={players.length < 3}>
+                    Generate First Round
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* History Tab */}
+          <TabsContent value="history">
+            <div className="space-y-4">
+              {rounds.length === 0 ? (
+                <Card className="bg-white/80 backdrop-blur-sm">
+                  <CardContent className="text-center py-12">
+                    <Clock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No Game History</h3>
+                    <p className="text-gray-500">Start playing to see your game history here!</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                rounds.map((round) => (
+                  <Card key={round.round} className="bg-white/80 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle>Round {round.round}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {round.matches.map((match) => (
+                          <div key={match.court} className="p-3 bg-gray-50 rounded-lg">
+                            <div className="font-semibold text-center mb-2">Court {match.court}</div>
+                            <div className="text-sm space-y-1">
+                              <div>
+                                <span className="font-medium text-blue-700">Team A:</span> {match.teamA.join(', ')}
+                              </div>
+                              <div>
+                                <span className="font-medium text-red-700">Team B:</span> {match.teamB.join(', ')}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {round.resting.length > 0 && (
+                        <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
+                          <span className="font-medium text-yellow-800">Resting:</span> {round.resting.join(', ')}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Export Tab */}
+          <TabsContent value="export">
+            <Card className="bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="w-5 h-5" />
+                  Export Game Sheet
+                </CardTitle>
+                <CardDescription>
+                  Download your complete game history and player statistics
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h3 className="font-semibold">Session Summary</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Total Players:</span>
+                        <span className="font-medium">{players.length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Rounds Played:</span>
+                        <span className="font-medium">{rounds.length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Courts Used:</span>
+                        <span className="font-medium">{numberOfCourts}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total Matches:</span>
+                        <span className="font-medium">{rounds.reduce((acc, round) => acc + round.matches.length, 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="font-semibold">Player Statistics</h3>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {players
+                        .sort((a, b) => b.gamesPlayed - a.gamesPlayed)
+                        .map((player) => (
+                          <div key={player.name} className="flex justify-between text-sm">
+                            <span>{player.name}</span>
+                            <span className="font-medium">{player.gamesPlayed} games</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <Button
+                    onClick={exportToCSV}
+                    disabled={rounds.length === 0}
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <Download className="w-4 h-4" />
+                    Export as CSV
+                  </Button>
+                </div>
+
+                {rounds.length === 0 && (
+                  <Alert>
+                    <AlertDescription>
+                      No game data to export. Play some rounds first!
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  )
+}
