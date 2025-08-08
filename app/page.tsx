@@ -36,6 +36,7 @@ export default function BadmintonPWA() {
   const [numberOfCourts, setNumberOfCourts] = useState(2)
   const [rounds, setRounds] = useState<Round[]>([])
   const [currentRound, setCurrentRound] = useState(0)
+  const [activeTab, setActiveTab] = useState('setup')
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function BadmintonPWA() {
       setNumberOfCourts(data.numberOfCourts || 2)
       setRounds(data.rounds || [])
       setCurrentRound(data.currentRound || 0)
+      setActiveTab(data.activeTab || 'setup')
     }
   }, [])
 
@@ -57,29 +59,30 @@ export default function BadmintonPWA() {
       numberOfRackets,
       numberOfCourts,
       rounds,
-      currentRound
+      currentRound,
+      activeTab
     }
     localStorage.setItem('badminton-pwa-data', JSON.stringify(data))
-  }, [players, numberOfRackets, numberOfCourts, rounds, currentRound])
+  }, [players, numberOfRackets, numberOfCourts, rounds, currentRound, activeTab])
 
   const getRecommendedCourts = () => {
     if (players.length < 3) return 0
-  
+
     const maxByPlayers = Math.floor(players.length / 3) // Minimum 3 players per court (2v1)
     const maxByRackets = Math.floor(numberOfRackets / 3) // Minimum 3 rackets per court
-    
+
     // Calculate optimal courts considering we can have 2v1 games
     let recommendedCourts = Math.min(3, maxByPlayers, maxByRackets)
-    
+
     // Special cases for better utilization
     if (players.length >= 7 && numberOfRackets >= 7) {
       recommendedCourts = Math.max(2, recommendedCourts) // At least 2 courts for 7+ players
     }
-    
+
     if (players.length >= 11 && numberOfRackets >= 11) {
       recommendedCourts = Math.max(3, recommendedCourts) // At least 3 courts for 11+ players
     }
-    
+
     return recommendedCourts
   }
 
@@ -113,30 +116,30 @@ export default function BadmintonPWA() {
     const totalRacketsAvailable = numberOfRackets
     const maxPlayersPerCourt = 4
     const minPlayersPerCourt = 3
-    
+
     // Distribute players across courts optimally
     let playersToAssign = Math.min(players.length, totalRacketsAvailable)
     let courtsToUse = numberOfCourts
-    
+
     // Adjust courts if we don't have enough players
     if (playersToAssign < courtsToUse * minPlayersPerCourt) {
       courtsToUse = Math.floor(playersToAssign / minPlayersPerCourt)
     }
-    
+
     const playingPlayers = sortedPlayers.slice(0, playersToAssign)
     const restingPlayers = sortedPlayers.slice(playersToAssign)
 
     // Create matches with flexible player distribution
     const matches: Match[] = []
     let playerIndex = 0
-    
+
     for (let court = 0; court < courtsToUse && playerIndex < playingPlayers.length; court++) {
       const remainingPlayers = playingPlayers.length - playerIndex
       const remainingCourts = courtsToUse - court
-      
+
       // Determine how many players for this court
       let playersForThisCourt: number
-      
+
       if (remainingCourts === 1) {
         // Last court gets all remaining players (3 or 4)
         playersForThisCourt = remainingPlayers
@@ -145,17 +148,17 @@ export default function BadmintonPWA() {
         const avgPlayersPerRemainingCourt = remainingPlayers / remainingCourts
         playersForThisCourt = avgPlayersPerRemainingCourt >= 3.5 ? 4 : 3
       }
-      
+
       // Ensure we don't exceed available players
       playersForThisCourt = Math.min(playersForThisCourt, remainingPlayers)
-      
+
       if (playersForThisCourt >= 3) {
         const courtPlayers = playingPlayers.slice(playerIndex, playerIndex + playersForThisCourt)
         playerIndex += playersForThisCourt
-        
+
         // Shuffle for random team assignment
         const shuffled = [...courtPlayers].sort(() => Math.random() - 0.5)
-        
+
         if (playersForThisCourt === 4) {
           // Standard 2v2
           matches.push({
@@ -195,6 +198,7 @@ export default function BadmintonPWA() {
     setPlayers(updatedPlayers)
     setRounds([...rounds, newRound])
     setCurrentRound(currentRound + 1)
+    setActiveTab('current') // Switch to current round tab
   }
 
   const resetSession = () => {
@@ -205,7 +209,7 @@ export default function BadmintonPWA() {
 
   const exportToCSV = () => {
     let csv = 'Round,Court,Team A Player 1,Team A Player 2,Team B Player 1,Team B Player 2,Resting Players\n'
-    
+
     rounds.forEach(round => {
       round.matches.forEach((match, index) => {
         const restingList = index === 0 ? round.resting.join('; ') : ''
@@ -233,51 +237,50 @@ export default function BadmintonPWA() {
       <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <Card className="border-gray-200">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl sm:text-3xl font-bold text-black flex items-center justify-center gap-2">
-              <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-black" />
-              <span className="hidden sm:inline">Badminton Rotation Manager</span>
-              <span className="sm:hidden">Badminton Manager</span>
+          <CardHeader className="text-center px-3 sm:px-6 py-4 sm:py-6">
+            <CardTitle className="text-lg sm:text-2xl md:text-3xl font-bold text-black flex items-center justify-center gap-1 sm:gap-2">
+              <Trophy className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-black" />
+              <span className="hidden md:inline">Badminton Rotation Manager</span>
+              <span className="hidden sm:inline md:hidden">Badminton Manager</span>
+              <span className="sm:hidden">Badminton</span>
             </CardTitle>
-            <CardDescription className="text-gray-600 text-sm sm:text-base">
-              Fair player rotation and game scheduling for your badminton group
+            <CardDescription className="text-gray-600 text-xs sm:text-sm md:text-base mt-1 sm:mt-2">
+              <span className="hidden sm:inline">Fair player rotation and game scheduling for your badminton group</span>
+              <span className="sm:hidden">Player rotation manager</span>
             </CardDescription>
           </CardHeader>
         </Card>
 
-        <Tabs defaultValue="setup" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-gray-100 border border-gray-200 p-1">
-            <TabsTrigger 
-              value="setup" 
-              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-gray-100 border border-gray-200 p-1 rounded-lg">
+            <TabsTrigger
+              value="setup"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
             >
-              <Settings className="w-4 h-4" />
-              <span className="hidden xs:inline">Setup</span>
-              <span className="xs:hidden">Setup</span>
+              <Settings className="w-4 h-4 shrink-0" />
+              <span className="truncate">Setup</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="current" 
-              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+            <TabsTrigger
+              value="current"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
             >
-              <Clock className="w-4 h-4" />
-              <span className="hidden xs:inline">Current Round</span>
-              <span className="xs:hidden">Current</span>
+              <Clock className="w-4 h-4 shrink-0" />
+              <span className="truncate hidden sm:inline">Current Round</span>
+              <span className="truncate sm:hidden">Current</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="history" 
-              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+            <TabsTrigger
+              value="history"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
             >
-              <Trophy className="w-4 h-4" />
-              <span className="hidden xs:inline">History</span>
-              <span className="xs:hidden">History</span>
+              <Trophy className="w-4 h-4 shrink-0" />
+              <span className="truncate">History</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="export" 
-              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+            <TabsTrigger
+              value="export"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
             >
-              <Download className="w-4 h-4" />
-              <span className="hidden xs:inline">Export</span>
-              <span className="xs:hidden">Export</span>
+              <Download className="w-4 h-4 shrink-0" />
+              <span className="truncate">Export</span>
             </TabsTrigger>
           </TabsList>
 
@@ -305,7 +308,7 @@ export default function BadmintonPWA() {
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
-                  
+
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {players.map((player) => (
                       <div key={player.name} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -346,7 +349,7 @@ export default function BadmintonPWA() {
                       className="border-gray-300 focus:border-black focus:ring-black"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="courts" className="text-black">Number of Courts</Label>
                     <Input
@@ -417,20 +420,28 @@ export default function BadmintonPWA() {
                           <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
                             <div className="text-center">
                               <div className="font-semibold text-black mb-1 text-sm sm:text-base">Team A</div>
-                              <div className="space-y-1 flex flex-wrap justify-center gap-1">
+                              <div className="flex flex-wrap justify-center gap-1">
                                 {match.teamA.map(player => (
-                                  <Badge key={player} variant="secondary" className="bg-white text-black border border-gray-300 text-xs sm:text-sm">
+                                  <Badge
+                                    key={player}
+                                    variant="secondary"
+                                    className="bg-white text-black border border-gray-300 text-xs sm:text-sm px-3 py-1 font-medium min-h-[24px] flex items-center justify-center"
+                                  >
                                     {player}
                                   </Badge>
                                 ))}
                               </div>
                             </div>
-                            <div className="text-center text-xs sm:text-sm font-medium text-gray-500">VS</div>
+                            <div className="text-center text-xs sm:text-sm font-medium text-gray-500 my-2">VS</div>
                             <div className="text-center">
                               <div className="font-semibold text-black mb-1 text-sm sm:text-base">Team B</div>
-                              <div className="space-y-1 flex flex-wrap justify-center gap-1">
+                              <div className="flex flex-wrap justify-center gap-1">
                                 {match.teamB.map(player => (
-                                  <Badge key={player} variant="secondary" className="bg-white text-black border border-gray-300 text-xs sm:text-sm">
+                                  <Badge
+                                    key={player}
+                                    variant="secondary"
+                                    className="bg-white text-black border border-gray-300 text-xs sm:text-sm px-3 py-1 font-medium min-h-[24px] flex items-center justify-center"
+                                  >
                                     {player}
                                   </Badge>
                                 ))}
