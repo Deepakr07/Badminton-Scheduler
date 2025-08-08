@@ -126,7 +126,7 @@ export function useBadmintonData() {
     // Calculate how many players can play based on courts and rackets
     const maxPlayersByRackets = numberOfRackets
     const maxPlayersByCourts = numberOfCourts * 4 // Maximum 4 players per court
-    
+
     // Determine actual players to assign and courts to use
     let playersToAssign = Math.min(players.length, maxPlayersByRackets, maxPlayersByCourts)
     let courtsToUse = numberOfCourts
@@ -152,34 +152,45 @@ export function useBadmintonData() {
     const playingPlayers = sortedPlayers.slice(0, playersToAssign)
     const restingPlayers = sortedPlayers.slice(playersToAssign)
 
+    // Improved court distribution logic - prioritize optimal court filling
+    const distributePlayersOptimally = (totalPlayers: number, totalCourts: number) => {
+      const distribution: number[] = []
+      let remainingPlayers = totalPlayers
+
+      // Priority 1: Fill courts with 4 players first (optimal 2v2)
+      for (let court = 0; court < totalCourts && remainingPlayers >= 4; court++) {
+        distribution.push(4)
+        remainingPlayers -= 4
+      }
+
+      // Priority 2: Handle remaining players
+      if (remainingPlayers > 0 && distribution.length < totalCourts) {
+        if (remainingPlayers >= 2) {
+          // If we have at least 2 players left and available courts, create singles match (1v1)
+          distribution.push(remainingPlayers)
+        } else if (remainingPlayers === 1 && distribution.length > 0) {
+          // If only 1 player left, add to the last court (making it 5 players - 3v2)
+          distribution[distribution.length - 1] += 1
+        }
+      }
+
+      return distribution
+    }
+
+    const playerDistribution = distributePlayersOptimally(playingPlayers.length, courtsToUse)
+    console.log(`Court distribution: ${playerDistribution.join(', ')} players per court`)
+
     const matches: Match[] = []
     let playerIndex = 0
 
-    for (let court = 0; court < courtsToUse && playerIndex < playingPlayers.length; court++) {
-      const remainingPlayers = playingPlayers.length - playerIndex
-      const remainingCourts = courtsToUse - court
-
-      let playersForThisCourt: number
-
-      if (playingPlayers.length === 5 && courtsToUse === 2) {
-        if (court === 0) {
-          playersForThisCourt = 3
-        } else {
-          playersForThisCourt = 2
-        }
-      } else if (remainingCourts === 1) {
-        playersForThisCourt = remainingPlayers
-      } else {
-        const avgPlayersPerRemainingCourt = remainingPlayers / remainingCourts
-        playersForThisCourt = avgPlayersPerRemainingCourt >= 3.5 ? 4 : 3
-      }
-
-      playersForThisCourt = Math.min(playersForThisCourt, remainingPlayers)
+    for (let court = 0; court < playerDistribution.length; court++) {
+      const playersForThisCourt = playerDistribution[court]
 
       if (playersForThisCourt >= 2) {
         const courtPlayers = playingPlayers.slice(playerIndex, playerIndex + playersForThisCourt)
         playerIndex += playersForThisCourt
 
+        // Shuffle for random team assignment
         const shuffled = [...courtPlayers]
         for (let i = shuffled.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
@@ -187,22 +198,32 @@ export function useBadmintonData() {
         }
 
         if (playersForThisCourt === 4) {
+          // Optimal 2v2 match
           matches.push({
             court: court + 1,
             teamA: [shuffled[0].name, shuffled[1].name],
             teamB: [shuffled[2].name, shuffled[3].name]
           })
         } else if (playersForThisCourt === 3) {
+          // 2v1 match
           matches.push({
             court: court + 1,
             teamA: [shuffled[0].name, shuffled[1].name],
             teamB: [shuffled[2].name]
           })
         } else if (playersForThisCourt === 2) {
+          // 1v1 singles match
           matches.push({
             court: court + 1,
             teamA: [shuffled[0].name],
             teamB: [shuffled[1].name]
+          })
+        } else if (playersForThisCourt === 5) {
+          // Special case: 5 players on one court (3v2)
+          matches.push({
+            court: court + 1,
+            teamA: [shuffled[0].name, shuffled[1].name, shuffled[2].name],
+            teamB: [shuffled[3].name, shuffled[4].name]
           })
         }
       }
@@ -228,7 +249,7 @@ export function useBadmintonData() {
     setPlayers(updatedPlayers)
     setRounds([...rounds, newRound])
     setCurrentRound(currentRound + 1)
-    
+
     return newRound
   }
 
