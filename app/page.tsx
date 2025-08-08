@@ -252,40 +252,42 @@ export default function BadmintonPWA() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-gray-100 border border-gray-200 p-1 rounded-lg">
-            <TabsTrigger
-              value="setup"
-              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
-            >
-              <Settings className="w-4 h-4 shrink-0" />
-              <span className="truncate">Setup</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="current"
-              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
-            >
-              <Clock className="w-4 h-4 shrink-0" />
-              <span className="truncate hidden sm:inline">Current Round</span>
-              <span className="truncate sm:hidden">Current</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="history"
-              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
-            >
-              <Trophy className="w-4 h-4 shrink-0" />
-              <span className="truncate">History</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="export"
-              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
-            >
-              <Download className="w-4 h-4 shrink-0" />
-              <span className="truncate">Export</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="bg-gray-100 border border-gray-200 rounded-md p-1.5">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-transparent border-0 p-0 h-auto">
+              <TabsTrigger
+                value="setup"
+                className="flex items-center justify-center gap-1 text-xs text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-sm px-1.5 py-1.5 min-w-0 m-0.5"
+              >
+                <Settings className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Setup</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="current"
+                className="flex items-center justify-center gap-1 text-xs text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-sm px-1.5 py-1.5 min-w-0 m-0.5"
+              >
+                <Clock className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate hidden sm:inline">Current Round</span>
+                <span className="truncate sm:hidden">Current</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="history"
+                className="flex items-center justify-center gap-1 text-xs text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-sm px-1.5 py-1.5 min-w-0 m-0.5"
+              >
+                <Trophy className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">History</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="export"
+                className="flex items-center justify-center gap-1 text-xs text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-sm px-1.5 py-1.5 min-w-0 m-0.5"
+              >
+                <Download className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Export</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Setup Tab */}
-          <TabsContent value="setup" className="space-y-6 mt-4 sm:mt-6">
+          <TabsContent value="setup" className="space-y-6 mt-6 sm:mt-8">
             <div className="grid md:grid-cols-2 gap-6">
               {/* Players Management */}
               <Card className="border-gray-200">
@@ -399,7 +401,7 @@ export default function BadmintonPWA() {
           </TabsContent>
 
           {/* Current Round Tab */}
-          <TabsContent value="current" className="mt-4 sm:mt-6">
+          <TabsContent value="current" className="mt-6 sm:mt-8">
             {getCurrentRoundData() ? (
               <div className="space-y-6">
                 <Card className="border-gray-200">
@@ -491,7 +493,7 @@ export default function BadmintonPWA() {
           </TabsContent>
 
           {/* History Tab */}
-          <TabsContent value="history" className="mt-4 sm:mt-6">
+          <TabsContent value="history" className="mt-6 sm:mt-8">
             <div className="space-y-4">
               {rounds.length === 0 ? (
                 <Card className="border-gray-200">
@@ -536,7 +538,7 @@ export default function BadmintonPWA() {
           </TabsContent>
 
           {/* Export Tab */}
-          <TabsContent value="export" className="mt-4 sm:mt-6">
+          <TabsContent value="export" className="mt-6 sm:mt-8">
             <Card className="border-gray-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-black">
