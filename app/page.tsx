@@ -403,7 +403,7 @@ export default function BadmintonPWA() {
                         <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
                           <span className="font-medium text-black text-sm sm:text-base truncate">{player.name}</span>
                           <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-800 border border-gray-300 shrink-0">
-                            {player.gamesPlayed} games
+                            {player.gamesPlayed} {player.gamesPlayed === 1 ? 'game' : 'games'}
                           </Badge>
                         </div>
                         <Button
@@ -667,7 +667,7 @@ export default function BadmintonPWA() {
                         .map((player) => (
                           <div key={player.name} className="flex justify-between text-sm">
                             <span className="text-gray-600">{player.name}</span>
-                            <span className="font-medium text-black">{player.gamesPlayed} games</span>
+                            <span className="font-medium text-black">{player.gamesPlayed} {player.gamesPlayed === 1 ? 'game' : 'games'}</span>
                           </div>
                         ))}
                     </div>
