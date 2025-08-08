@@ -123,23 +123,31 @@ export function useBadmintonData() {
       return a.lastPlayedRound - b.lastPlayedRound
     })
 
-    const totalRacketsAvailable = numberOfRackets
-    let playersToAssign = Math.min(players.length, totalRacketsAvailable)
+    // Calculate how many players can play based on courts and rackets
+    const maxPlayersByRackets = numberOfRackets
+    const maxPlayersByCourts = numberOfCourts * 4 // Maximum 4 players per court
+    
+    // Determine actual players to assign and courts to use
+    let playersToAssign = Math.min(players.length, maxPlayersByRackets, maxPlayersByCourts)
     let courtsToUse = numberOfCourts
 
-    if (playersToAssign === 5) {
-      if (courtsToUse >= 2) {
-        courtsToUse = 2
-        playersToAssign = 5
-      } else {
-        courtsToUse = 1
-        playersToAssign = 4
+    // Adjust for court limitations - each court can handle 2-4 players optimally
+    if (courtsToUse === 1) {
+      // Single court scenarios
+      if (playersToAssign > 4) {
+        playersToAssign = 4 // Maximum 4 players on 1 court (2v2)
       }
-    } else {
-      if (playersToAssign < courtsToUse * 3) {
-        courtsToUse = Math.floor(playersToAssign / 3)
+    } else if (courtsToUse === 2) {
+      // Two court scenarios
+      if (playersToAssign === 5) {
+        // 5 players, 2 courts: use both courts (3 + 2)
+        courtsToUse = 2
+      } else if (playersToAssign > 8) {
+        playersToAssign = 8 // Maximum 8 players on 2 courts
       }
     }
+
+    console.log(`Round generation: ${players.length} total players, ${playersToAssign} playing, ${courtsToUse} courts, ${players.length - playersToAssign} resting`)
 
     const playingPlayers = sortedPlayers.slice(0, playersToAssign)
     const restingPlayers = sortedPlayers.slice(playersToAssign)
