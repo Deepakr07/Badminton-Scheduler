@@ -1,47 +1,53 @@
 "use client"
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Settings, Clock, Trophy, Download } from 'lucide-react'
 
-interface NavigationProps {
-  activeTab: string
-  onTabChange: (value: string) => void
-}
+export function Navigation() {
+  const pathname = usePathname()
 
-export function Navigation({ activeTab, onTabChange }: NavigationProps) {
+  const navItems = [
+    { href: '/', label: 'Setup', icon: Settings, value: 'setup' },
+    { href: '/current', label: 'Current Round', shortLabel: 'Current', icon: Clock, value: 'current' },
+    { href: '/history', label: 'History', icon: Trophy, value: 'history' },
+    { href: '/export', label: 'Export', icon: Download, value: 'export' },
+  ]
+
+  const getActiveValue = () => {
+    if (pathname === '/') return 'setup'
+    if (pathname === '/current') return 'current'
+    if (pathname === '/history') return 'history'
+    if (pathname === '/export') return 'export'
+    return 'setup'
+  }
+
+  const activeValue = getActiveValue()
+
   return (
     <div className="bg-gray-100 border border-gray-200 rounded-md p-1.5">
-      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-transparent border-0 p-0 h-auto">
-        <TabsTrigger
-          value="setup"
-          className="flex items-center justify-center gap-1 text-xs text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-sm px-1.5 py-1.5 min-w-0 m-0.5"
-        >
-          <Settings className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">Setup</span>
-        </TabsTrigger>
-        <TabsTrigger
-          value="current"
-          className="flex items-center justify-center gap-1 text-xs text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-sm px-1.5 py-1.5 min-w-0 m-0.5"
-        >
-          <Clock className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate hidden sm:inline">Current Round</span>
-          <span className="truncate sm:hidden">Current</span>
-        </TabsTrigger>
-        <TabsTrigger
-          value="history"
-          className="flex items-center justify-center gap-1 text-xs text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-sm px-1.5 py-1.5 min-w-0 m-0.5"
-        >
-          <Trophy className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">History</span>
-        </TabsTrigger>
-        <TabsTrigger
-          value="export"
-          className="flex items-center justify-center gap-1 text-xs text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-sm px-1.5 py-1.5 min-w-0 m-0.5"
-        >
-          <Download className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">Export</span>
-        </TabsTrigger>
-      </TabsList>
+      <div className="grid w-full grid-cols-2 sm:grid-cols-4 bg-transparent border-0 p-0 h-auto">
+        {navItems.map((item) => {
+          const Icon = item.icon
+          const isActive = activeValue === item.value
+          
+          return (
+            <Link
+              key={item.value}
+              href={item.href}
+              className={`flex items-center justify-center gap-1 text-xs transition-all rounded-sm px-1.5 py-1.5 min-w-0 m-0.5 ${
+                isActive 
+                  ? 'bg-white text-black' 
+                  : 'text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate hidden sm:inline">{item.label}</span>
+              <span className="truncate sm:hidden">{item.shortLabel || item.label}</span>
+            </Link>
+          )
+        })}
+      </div>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { BadmintonProvider } from '@/contexts/BadmintonContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -40,7 +41,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Badminton PWA" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <BadmintonProvider>
+          {children}
+        </BadmintonProvider>
+      </body>
     </html>
   )
 }
