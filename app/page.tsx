@@ -248,38 +248,35 @@ export default function BadmintonPWA() {
         </Card>
 
         <Tabs defaultValue="setup" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-gray-100 border border-gray-200 p-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-gray-100 border border-gray-200 p-1 rounded-lg">
             <TabsTrigger 
               value="setup" 
-              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
             >
-              <Settings className="w-4 h-4" />
-              <span className="hidden xs:inline">Setup</span>
-              <span className="xs:hidden">Setup</span>
+              <Settings className="w-4 h-4 shrink-0" />
+              <span className="truncate">Setup</span>
             </TabsTrigger>
             <TabsTrigger 
               value="current" 
-              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
             >
-              <Clock className="w-4 h-4" />
-              <span className="hidden xs:inline">Current Round</span>
-              <span className="xs:hidden">Current</span>
+              <Clock className="w-4 h-4 shrink-0" />
+              <span className="truncate hidden sm:inline">Current Round</span>
+              <span className="truncate sm:hidden">Current</span>
             </TabsTrigger>
             <TabsTrigger 
               value="history" 
-              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
             >
-              <Trophy className="w-4 h-4" />
-              <span className="hidden xs:inline">History</span>
-              <span className="xs:hidden">History</span>
+              <Trophy className="w-4 h-4 shrink-0" />
+              <span className="truncate">History</span>
             </TabsTrigger>
             <TabsTrigger 
               value="export" 
-              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all rounded-md px-2 py-2 min-w-0"
             >
-              <Download className="w-4 h-4" />
-              <span className="hidden xs:inline">Export</span>
-              <span className="xs:hidden">Export</span>
+              <Download className="w-4 h-4 shrink-0" />
+              <span className="truncate">Export</span>
             </TabsTrigger>
           </TabsList>
 
@@ -419,20 +416,20 @@ export default function BadmintonPWA() {
                           <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
                             <div className="text-center">
                               <div className="font-semibold text-black mb-1 text-sm sm:text-base">Team A</div>
-                              <div className="space-y-1 flex flex-wrap justify-center gap-1">
+                              <div className="flex flex-wrap justify-center gap-1">
                                 {match.teamA.map(player => (
-                                  <Badge key={player} variant="secondary" className="bg-white text-black border border-gray-300 text-xs sm:text-sm">
+                                  <Badge key={player} variant="secondary" className="bg-white text-black border border-gray-300 text-xs sm:text-sm px-2 py-1 font-medium">
                                     {player}
                                   </Badge>
                                 ))}
                               </div>
                             </div>
-                            <div className="text-center text-xs sm:text-sm font-medium text-gray-500">VS</div>
+                            <div className="text-center text-xs sm:text-sm font-medium text-gray-500 my-2">VS</div>
                             <div className="text-center">
                               <div className="font-semibold text-black mb-1 text-sm sm:text-base">Team B</div>
-                              <div className="space-y-1 flex flex-wrap justify-center gap-1">
+                              <div className="flex flex-wrap justify-center gap-1">
                                 {match.teamB.map(player => (
-                                  <Badge key={player} variant="secondary" className="bg-white text-black border border-gray-300 text-xs sm:text-sm">
+                                  <Badge key={player} variant="secondary" className="bg-white text-black border border-gray-300 text-xs sm:text-sm px-2 py-1 font-medium">
                                     {player}
                                   </Badge>
                                 ))}
