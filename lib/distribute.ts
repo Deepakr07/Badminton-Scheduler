@@ -64,56 +64,209 @@ function getPartnershipScore(player1: Player, player2: Player): number {
 }
 
 /**
- * Generates optimal team pairings that minimize repeated partnerships
+ * Generates optimal team pairings that minimize repeated partnerships and opponents
  */
-export function generateOptimalPairings(players: Player[], playerDistribution: number[]): Match[] {
-  const matches: Match[] = []
-  const availablePlayers = [...players]
+export function generateOptimalPairings(players: Player[], playerDistribution: number[], previousRounds: any[] = []): Match[] {
+  // First, create all possible court assignments
+  const courtAssignments = generateCourtAssignments(players, playerDistribution, previousRounds)
   
-  for (let court = 0; court < playerDistribution.length; court++) {
-    const playersForThisCourt = playerDistribution[court]
+  // Find the best assignment that minimizes both partnerships and opponent repetition
+  const bestAssignment = findBestCourtAssignment(courtAssignments, players, previousRounds)
+  
+  return bestAssignment
+}
+
+/**
+ * Generates different ways to assign players to courts
+ */
+function generateCourtAssignments(players: Player[], playerDistribution: number[], previousRounds: any[]): Player[][][] {
+  const assignments: Player[][][] = []
+  const totalPlayers = playerDistribution.reduce((sum, count) => sum + count, 0)
+  
+  if (totalPlayers !== players.length) {
+    // Simple assignment if player count doesn't match
+    return [assignPlayersSequentially(players, playerDistribution)]
+  }
+  
+  // Generate multiple random assignments for variety
+  for (let attempt = 0; attempt < Math.min(20, factorial(Math.min(players.length, 8))); attempt++) {
+    const shuffledPlayers = [...players]
     
-    if (playersForThisCourt >= 2) {
-      const courtPlayers = availablePlayers.splice(0, playersForThisCourt)
+    // Smart shuffle that considers court history
+    shuffleWithCourtHistory(shuffledPlayers, previousRounds)
+    
+    const assignment = assignPlayersSequentially(shuffledPlayers, playerDistribution)
+    assignments.push(assignment)
+  }
+  
+  return assignments
+}
+
+/**
+ * Shuffles players while considering their court history
+ */
+function shuffleWithCourtHistory(players: Player[], previousRounds: any[]) {
+  // Get court history for each player
+  const courtHistory = getCourtHistory(players, previousRounds)
+  
+  // Fisher-Yates shuffle with court bias
+  for (let i = players.length - 1; i > 0; i--) {
+    // Bias selection towards players who haven't been on the same courts recently
+    let j = Math.floor(Math.random() * (i + 1))
+    
+    // Add some bias to avoid court stickiness
+    if (Math.random() < 0.3) { // 30% chance to apply court bias
+      const playerCourtCounts = courtHistory[players[i].name] || {}
+      const candidateCourtCounts = courtHistory[players[j].name] || {}
       
-      if (playersForThisCourt === 4) {
-        // Find optimal pairing for 4 players (2v2)
+      // Try to find a better swap candidate
+      for (let k = 0; k <= i; k++) {
+        const altCourtCounts = courtHistory[players[k].name] || {}
+        if (hasLessCourtOverlap(playerCourtCounts, altCourtCounts, candidateCourtCounts)) {
+          j = k
+          break
+        }
+      }
+    }
+    
+    [players[i], players[j]] = [players[j], players[i]]
+  }
+}
+
+/**
+ * Assigns players to courts sequentially
+ */
+function assignPlayersSequentially(players: Player[], playerDistribution: number[]): Player[][] {
+  const assignment: Player[][] = []
+  let playerIndex = 0
+  
+  for (const courtSize of playerDistribution) {
+    assignment.push(players.slice(playerIndex, playerIndex + courtSize))
+    playerIndex += courtSize
+  }
+  
+  return assignment
+}
+
+/**
+ * Finds the best court assignment considering partnerships, opponents, and court rotation
+ */
+function findBestCourtAssignment(assignments: Player[][][], allPlayers: Player[], previousRounds: any[]): Match[] {
+  let bestScore = Infinity
+  let bestMatches: Match[] = []
+  
+  for (const assignment of assignments) {
+    const matches = createMatchesFromAssignment(assignment)
+    const score = calculateAssignmentScore(matches, allPlayers, previousRounds)
+    
+    if (score < bestScore) {
+      bestScore = score
+      bestMatches = matches
+    }
+  }
+  
+  return bestMatches
+}
+
+/**
+ * Creates matches from a court assignment
+ */
+function createMatchesFromAssignment(assignment: Player[][]): Match[] {
+  const matches: Match[] = []
+  
+  assignment.forEach((courtPlayers, courtIndex) => {
+    if (courtPlayers.length >= 2) {
+      if (courtPlayers.length === 4) {
         const bestPairing = findBestDoublesTeams(courtPlayers)
         matches.push({
-          court: court + 1,
+          court: courtIndex + 1,
           teamA: bestPairing.teamA,
           teamB: bestPairing.teamB
         })
-      } else if (playersForThisCourt === 3) {
-        // For 3 players, pair the two with lowest partnership score
+      } else if (courtPlayers.length === 3) {
         const bestPair = findBestPair(courtPlayers)
         const remaining = courtPlayers.find(p => !bestPair.includes(p))!
         matches.push({
-          court: court + 1,
+          court: courtIndex + 1,
           teamA: bestPair.map(p => p.name),
           teamB: [remaining.name]
         })
-      } else if (playersForThisCourt === 2) {
-        // Singles match
+      } else if (courtPlayers.length === 2) {
         matches.push({
-          court: court + 1,
+          court: courtIndex + 1,
           teamA: [courtPlayers[0].name],
           teamB: [courtPlayers[1].name]
         })
-      } else if (playersForThisCourt === 5) {
-        // 5 players: make one team of 3, one team of 2
+      } else if (courtPlayers.length === 5) {
         const bestTriple = findBestTriple(courtPlayers)
         const remaining = courtPlayers.filter(p => !bestTriple.includes(p))
         matches.push({
-          court: court + 1,
+          court: courtIndex + 1,
           teamA: bestTriple.map(p => p.name),
           teamB: remaining.map(p => p.name)
         })
       }
     }
-  }
+  })
   
   return matches
+}
+
+/**
+ * Calculates a score for an assignment (lower is better)
+ */
+function calculateAssignmentScore(matches: Match[], allPlayers: Player[], previousRounds: any[]): number {
+  let score = 0
+  
+  // Partnership repetition penalty
+  matches.forEach(match => {
+    // Penalty for repeated partnerships within teams
+    if (match.teamA.length > 1) {
+      for (let i = 0; i < match.teamA.length; i++) {
+        for (let j = i + 1; j < match.teamA.length; j++) {
+          const player1 = allPlayers.find(p => p.name === match.teamA[i])!
+          const player2 = allPlayers.find(p => p.name === match.teamA[j])!
+          score += getPartnershipScore(player1, player2) * 10 // Heavy penalty for partnerships
+        }
+      }
+    }
+    
+    if (match.teamB.length > 1) {
+      for (let i = 0; i < match.teamB.length; i++) {
+        for (let j = i + 1; j < match.teamB.length; j++) {
+          const player1 = allPlayers.find(p => p.name === match.teamB[i])!
+          const player2 = allPlayers.find(p => p.name === match.teamB[j])!
+          score += getPartnershipScore(player1, player2) * 10
+        }
+      }
+    }
+  })
+  
+  // Opponent repetition penalty
+  const opponentHistory = getOpponentHistory(allPlayers, previousRounds)
+  matches.forEach(match => {
+    match.teamA.forEach(playerA => {
+      match.teamB.forEach(playerB => {
+        const opponentCount = (opponentHistory[playerA] && opponentHistory[playerA][playerB]) || 0
+        score += opponentCount * 5 // Medium penalty for repeated opponents
+      })
+    })
+  })
+  
+  // Court stickiness penalty
+  const courtHistory = getCourtHistory(allPlayers, previousRounds)
+  matches.forEach(match => {
+    const courtNum = match.court
+    const allPlayersInMatch = [...match.teamA, ...match.teamB]
+    
+    allPlayersInMatch.forEach(playerName => {
+      const playerCourtHistory = courtHistory[playerName] || {}
+      const timesOnThisCourt = playerCourtHistory[courtNum] || 0
+      score += timesOnThisCourt * 3 // Penalty for court stickiness
+    })
+  })
+  
+  return score
 }
 
 /**
@@ -182,6 +335,106 @@ function findBestDoublesTeams(players: Player[]): { teamA: string[], teamB: stri
   } else {
     return { teamA: [p1.name, p4.name], teamB: [p2.name, p3.name] }
   }
+}
+
+/**
+ * Gets court history for all players from previous rounds
+ */
+function getCourtHistory(players: Player[], previousRounds: any[]): Record<string, Record<number, number>> {
+  const courtHistory: Record<string, Record<number, number>> = {}
+  
+  // Initialize court history for all players
+  players.forEach(player => {
+    courtHistory[player.name] = {}
+  })
+  
+  // Count court usage from previous rounds
+  previousRounds.forEach(round => {
+    if (round.matches) {
+      round.matches.forEach((match: Match) => {
+        const courtNum = match.court
+        const allPlayersInMatch = [...match.teamA, ...match.teamB]
+        
+        allPlayersInMatch.forEach(playerName => {
+          if (!courtHistory[playerName]) {
+            courtHistory[playerName] = {}
+          }
+          courtHistory[playerName][courtNum] = (courtHistory[playerName][courtNum] || 0) + 1
+        })
+      })
+    }
+  })
+  
+  return courtHistory
+}
+
+/**
+ * Gets opponent history for all players from previous rounds
+ */
+function getOpponentHistory(players: Player[], previousRounds: any[]): Record<string, Record<string, number>> {
+  const opponentHistory: Record<string, Record<string, number>> = {}
+  
+  // Initialize opponent history for all players
+  players.forEach(player => {
+    opponentHistory[player.name] = {}
+  })
+  
+  // Count opponent matchups from previous rounds
+  previousRounds.forEach(round => {
+    if (round.matches) {
+      round.matches.forEach((match: Match) => {
+        // Each player in teamA has played against each player in teamB
+        match.teamA.forEach(playerA => {
+          match.teamB.forEach(playerB => {
+            if (!opponentHistory[playerA]) {
+              opponentHistory[playerA] = {}
+            }
+            if (!opponentHistory[playerB]) {
+              opponentHistory[playerB] = {}
+            }
+            
+            opponentHistory[playerA][playerB] = (opponentHistory[playerA][playerB] || 0) + 1
+            opponentHistory[playerB][playerA] = (opponentHistory[playerB][playerA] || 0) + 1
+          })
+        })
+      })
+    }
+  })
+  
+  return opponentHistory
+}
+
+/**
+ * Checks if one court count distribution has less overlap than another
+ */
+function hasLessCourtOverlap(
+  playerCounts: Record<number, number>, 
+  altCounts: Record<number, number>, 
+  candidateCounts: Record<number, number>
+): boolean {
+  // Calculate overlap scores (higher means more court stickiness)
+  const getOverlapScore = (counts: Record<number, number>) => {
+    return Object.values(counts).reduce((sum, count) => sum + count * count, 0)
+  }
+  
+  const altScore = getOverlapScore(altCounts)
+  const candidateScore = getOverlapScore(candidateCounts)
+  
+  return altScore < candidateScore
+}
+
+/**
+ * Simple factorial function (capped for performance)
+ */
+function factorial(n: number): number {
+  if (n <= 1) return 1
+  if (n > 10) return 3628800 // Cap at 10! for performance
+  
+  let result = 1
+  for (let i = 2; i <= n; i++) {
+    result *= i
+  }
+  return result
 }
 
 /**
