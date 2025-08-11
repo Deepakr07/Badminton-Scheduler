@@ -175,8 +175,8 @@ export function useBadmintonData() {
     const playingPlayers = shuffledSortedPlayers.slice(0, actualPlayingPlayers)
     const restingPlayers = shuffledSortedPlayers.slice(actualPlayingPlayers)
 
-    // Use the new partnership-aware pairing algorithm
-    const matches = generateOptimalPairings(playingPlayers, playerDistribution)
+    // Use the enhanced partnership-aware pairing algorithm with court rotation and opponent tracking
+    const matches = generateOptimalPairings(playingPlayers, playerDistribution, rounds)
 
     // Create new round data with resting players
     const newRound: Round = {
@@ -250,6 +250,103 @@ export function useBadmintonData() {
     return { stats, balanceMetrics }
   }
 
+  const getOpponentStats = () => {
+    // Calculate opponent history from rounds
+    const opponentHistory: Record<string, Record<string, number>> = {}
+    
+    // Initialize opponent history for all players
+    players.forEach(player => {
+      opponentHistory[player.name] = {}
+    })
+    
+    // Count opponent matchups from all rounds
+    rounds.forEach(round => {
+      round.matches.forEach(match => {
+        // Each player in teamA has played against each player in teamB
+        match.teamA.forEach(playerA => {
+          match.teamB.forEach(playerB => {
+            if (!opponentHistory[playerA]) {
+              opponentHistory[playerA] = {}
+            }
+            if (!opponentHistory[playerB]) {
+              opponentHistory[playerB] = {}
+            }
+            
+            opponentHistory[playerA][playerB] = (opponentHistory[playerA][playerB] || 0) + 1
+            opponentHistory[playerB][playerA] = (opponentHistory[playerB][playerA] || 0) + 1
+          })
+        })
+      })
+    })
+
+    const stats = players.map(player => ({
+      name: player.name,
+      opponents: Object.entries(opponentHistory[player.name] || {})
+        .sort(([,a], [,b]) => b - a) // Sort by opponent count descending
+        .map(([opponent, count]) => ({ opponent, count }))
+    }))
+
+    // Calculate balance metrics for opponents
+    const allOpponents = players.flatMap(player => 
+      Object.values(opponentHistory[player.name] || {})
+    ).filter(count => count > 0)
+
+    const balanceMetrics = allOpponents.length > 0 ? {
+      min: Math.min(...allOpponents),
+      max: Math.max(...allOpponents),
+      avg: allOpponents.reduce((a, b) => a + b, 0) / allOpponents.length,
+      balanceScore: Math.max(...allOpponents) - Math.min(...allOpponents)
+    } : { min: 0, max: 0, avg: 0, balanceScore: 0 }
+
+    return { stats, balanceMetrics }
+  }
+
+  const getCourtStats = () => {
+    // Calculate court usage history from rounds
+    const courtHistory: Record<string, Record<number, number>> = {}
+    
+    // Initialize court history for all players
+    players.forEach(player => {
+      courtHistory[player.name] = {}
+    })
+    
+    // Count court usage from all rounds
+    rounds.forEach(round => {
+      round.matches.forEach(match => {
+        const courtNum = match.court
+        const allPlayersInMatch = [...match.teamA, ...match.teamB]
+        
+        allPlayersInMatch.forEach(playerName => {
+          if (!courtHistory[playerName]) {
+            courtHistory[playerName] = {}
+          }
+          courtHistory[playerName][courtNum] = (courtHistory[playerName][courtNum] || 0) + 1
+        })
+      })
+    })
+
+    const stats = players.map(player => ({
+      name: player.name,
+      courts: Object.entries(courtHistory[player.name] || {})
+        .sort(([,a], [,b]) => b - a) // Sort by court usage count descending
+        .map(([court, count]) => ({ court: parseInt(court), count }))
+    }))
+
+    // Calculate balance metrics for court usage
+    const allCourtUsage = players.flatMap(player => 
+      Object.values(courtHistory[player.name] || {})
+    ).filter(count => count > 0)
+
+    const balanceMetrics = allCourtUsage.length > 0 ? {
+      min: Math.min(...allCourtUsage),
+      max: Math.max(...allCourtUsage),
+      avg: allCourtUsage.reduce((a, b) => a + b, 0) / allCourtUsage.length,
+      balanceScore: Math.max(...allCourtUsage) - Math.min(...allCourtUsage)
+    } : { min: 0, max: 0, avg: 0, balanceScore: 0 }
+
+    return { stats, balanceMetrics }
+  }
+
   const exportToCSV = () => {
     let csv = 'Round,Court,Team A Player 1,Team A Player 2,Team B Player 1,Team B Player 2,Resting Players\n'
 
@@ -284,6 +381,8 @@ export function useBadmintonData() {
     resetSession,
     getCurrentRoundData,
     getPartnershipStats,
+    getOpponentStats,
+    getCourtStats,
     exportToCSV
   }
 }
