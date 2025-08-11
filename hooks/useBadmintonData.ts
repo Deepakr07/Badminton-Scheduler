@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Player, Match, Round, BadmintonData } from "@/types/badminton"
+import { Player, Round } from "@/types/badminton"
+import { distributePlayersOptimally, generateOptimalPairings, updatePartnerships } from "@/lib/distribute"
 
 export function useBadmintonData() {
   const [players, setPlayers] = useState<Player[]>([])
@@ -27,7 +28,12 @@ export function useBadmintonData() {
           setCurrentRound(loadedCurrentRound)
         }
 
-        setPlayers(data.players || [])
+        // Migrate existing players to include partnerships if missing
+        const migratedPlayers = (data.players || []).map((player: any) => ({
+          ...player,
+          partnerships: player.partnerships || {}
+        }))
+        setPlayers(migratedPlayers)
         setNumberOfRackets(data.numberOfRackets || 8)
         setNumberOfCourts(data.numberOfCourts || 2)
         setRounds(loadedRounds)
@@ -50,17 +56,7 @@ export function useBadmintonData() {
     localStorage.setItem('badminton-pwa-data', JSON.stringify(data))
   }, [players, numberOfRackets, numberOfCourts, rounds, currentRound])
 
-  // Manual save function for immediate persistence
-  const saveToLocalStorage = () => {
-    const data = {
-      players,
-      numberOfRackets,
-      numberOfCourts,
-      rounds,
-      currentRound
-    }
-    localStorage.setItem('badminton-pwa-data', JSON.stringify(data))
-  }
+
 
   // Check for data inconsistencies and fix them
   useEffect(() => {
@@ -102,7 +98,8 @@ export function useBadmintonData() {
       setPlayers([...players, {
         name: name.trim(),
         gamesPlayed: 0,
-        lastPlayedRound: 0
+        lastPlayedRound: 0,
+        partnerships: {}
       }])
       return true
     }
@@ -127,7 +124,7 @@ export function useBadmintonData() {
     // Shuffle players within the same priority group to avoid repeated pairings
     const shuffleWithinPriorityGroups = (players: Player[]) => {
       const groups = new Map<string, Player[]>()
-      
+
       // Group players by their priority (gamesPlayed + lastPlayedRound)
       players.forEach(player => {
         const key = `${player.gamesPlayed}-${player.lastPlayedRound}`
@@ -144,11 +141,11 @@ export function useBadmintonData() {
         const shuffledGroup = [...group]
         for (let i = shuffledGroup.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1))
-          ;[shuffledGroup[i], shuffledGroup[j]] = [shuffledGroup[j], shuffledGroup[i]]
+            ;[shuffledGroup[i], shuffledGroup[j]] = [shuffledGroup[j], shuffledGroup[i]]
         }
         shuffledPlayers.push(...shuffledGroup)
       }
-      
+
       return shuffledPlayers
     }
 
@@ -167,45 +164,10 @@ export function useBadmintonData() {
       playersToAssign = minPlayersPerRound
     }
 
-    // Calculate optimal distribution for courts
-    const distributePlayersOptimally = (totalPlayers: number, totalCourts: number) => {
-      if (totalPlayers < 2) return []
-      
-      const distribution: number[] = []
-      let remainingPlayers = totalPlayers
-      let remainingCourts = totalCourts
-
-      // First, try to fill courts with 4 players each (2v2 matches)
-      while (remainingCourts > 0 && remainingPlayers >= 4) {
-        distribution.push(4)
-        remainingPlayers -= 4
-        remainingCourts--
-      }
-
-      // Handle remaining players
-      if (remainingPlayers > 0 && remainingCourts > 0) {
-        if (remainingPlayers >= 2) {
-          // If we have 2 or 3 players left and a court available
-          if (remainingPlayers === 3) {
-            // 1v2 match (not ideal but acceptable)
-            distribution.push(3)
-            remainingPlayers -= 3
-          } else if (remainingPlayers === 2) {
-            // 1v1 match
-            distribution.push(2)
-            remainingPlayers -= 2
-          }
-        }
-      }
-
-      // If we still have remaining players, they need to be distributed or rest
-      // For now, any remaining players will rest
-      return distribution
-    }
-
+    // Use the imported distribution function
     const playerDistribution = distributePlayersOptimally(playersToAssign, numberOfCourts)
     const actualPlayingPlayers = playerDistribution.reduce((sum, players) => sum + players, 0)
-    
+
     console.log(`Round generation: ${players.length} total players, ${actualPlayingPlayers} playing, ${playerDistribution.length} courts used, ${players.length - actualPlayingPlayers} resting`)
     console.log(`Court distribution: ${playerDistribution.join(', ')} players per court`)
 
@@ -213,44 +175,8 @@ export function useBadmintonData() {
     const playingPlayers = shuffledSortedPlayers.slice(0, actualPlayingPlayers)
     const restingPlayers = shuffledSortedPlayers.slice(actualPlayingPlayers)
 
-    const matches: Match[] = []
-    let playerIndex = 0
-
-    for (let court = 0; court < playerDistribution.length; court++) {
-      const playersForThisCourt = playerDistribution[court]
-
-      if (playersForThisCourt >= 2) {
-        const courtPlayers = playingPlayers.slice(playerIndex, playerIndex + playersForThisCourt)
-        playerIndex += playersForThisCourt
-
-        // Shuffle players for random team assignment (Fisher-Yates)
-        const shuffled = [...courtPlayers]
-        for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1))
-          ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-        }
-
-        if (playersForThisCourt === 4) {
-          matches.push({
-            court: court + 1,
-            teamA: [shuffled[0].name, shuffled[1].name],
-            teamB: [shuffled[2].name, shuffled[3].name]
-          })
-        } else if (playersForThisCourt === 3) {
-          matches.push({
-            court: court + 1,
-            teamA: [shuffled[0].name, shuffled[1].name],
-            teamB: [shuffled[2].name]
-          })
-        } else if (playersForThisCourt === 2) {
-          matches.push({
-            court: court + 1,
-            teamA: [shuffled[0].name],
-            teamB: [shuffled[1].name]
-          })
-        }
-      }
-    }
+    // Use the new partnership-aware pairing algorithm
+    const matches = generateOptimalPairings(playingPlayers, playerDistribution)
 
     // Create new round data with resting players
     const newRound: Round = {
@@ -277,7 +203,10 @@ export function useBadmintonData() {
       return player
     })
 
-    setPlayers(updatedPlayers)
+    // Update partnerships based on the matches
+    const playersWithUpdatedPartnerships = updatePartnerships(updatedPlayers, matches)
+
+    setPlayers(playersWithUpdatedPartnerships)
     setRounds([...rounds, newRound])
     setCurrentRound(currentRound + 1)
 
@@ -285,7 +214,7 @@ export function useBadmintonData() {
   }
 
   const resetSession = () => {
-    setPlayers(players.map(p => ({ ...p, gamesPlayed: 0, lastPlayedRound: 0 })))
+    setPlayers(players.map(p => ({ ...p, gamesPlayed: 0, lastPlayedRound: 0, partnerships: {} })))
     setRounds([])
     setCurrentRound(0)
     localStorage.removeItem('badminton-pwa-data')
@@ -296,6 +225,29 @@ export function useBadmintonData() {
       return null
     }
     return rounds[currentRound - 1]
+  }
+
+  const getPartnershipStats = () => {
+    const stats = players.map(player => ({
+      name: player.name,
+      partnerships: Object.entries(player.partnerships)
+        .sort(([,a], [,b]) => b - a) // Sort by partnership count descending
+        .map(([partner, count]) => ({ partner, count }))
+    }))
+
+    // Calculate balance metrics
+    const allPartnerships = players.flatMap(player => 
+      Object.values(player.partnerships)
+    ).filter(count => count > 0)
+
+    const balanceMetrics = allPartnerships.length > 0 ? {
+      min: Math.min(...allPartnerships),
+      max: Math.max(...allPartnerships),
+      avg: allPartnerships.reduce((a, b) => a + b, 0) / allPartnerships.length,
+      balanceScore: Math.max(...allPartnerships) - Math.min(...allPartnerships)
+    } : { min: 0, max: 0, avg: 0, balanceScore: 0 }
+
+    return { stats, balanceMetrics }
   }
 
   const exportToCSV = () => {
@@ -331,6 +283,7 @@ export function useBadmintonData() {
     generateNextRound,
     resetSession,
     getCurrentRoundData,
+    getPartnershipStats,
     exportToCSV
   }
 }

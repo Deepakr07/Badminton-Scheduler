@@ -2,6 +2,8 @@ export interface Player {
   name: string
   gamesPlayed: number
   lastPlayedRound: number
+
+  partnerships: Record<string, number> // tracks how many times played with each player
 }
 
 export interface Match {
